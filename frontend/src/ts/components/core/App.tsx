@@ -3,12 +3,13 @@ import {
   RouterContextProvider,
   RouterProvider as RouteRenderer,
 } from "@tanstack/solid-router";
-import { createEffect, JSXElement, onMount } from "solid-js";
+import { createEffect, JSXElement, onMount, Show } from "solid-js";
 
 import * as MonkeyPower from "../../elements/monkey-power";
 import { queryClient } from "../../queries";
 import { router } from "../../router/app-router";
 import { getGlobalOffsetTop, isAppReady } from "../../states/core";
+import { getRoutePage } from "../../states/router";
 import { isFocusMode } from "../../states/test";
 import { cn } from "../../utils/cn";
 import { convertRemToPixels } from "../../utils/numbers";
@@ -26,6 +27,16 @@ import { Font } from "./Font";
 import { Funbox } from "./Funbox";
 import { NoCssDetails } from "./NoCssDetails";
 import { Theme } from "./Theme";
+
+// kiosk: the live leaderboard (second laptop) has no header or footer. Also
+// true while the first load resolves, so they don't flash on that url.
+function isKioskLeaderboard(): boolean {
+  const page = getRoutePage();
+  return (
+    page === "kioskLeaderboard" ||
+    (page === "loading" && window.location.pathname.startsWith("/leaderboard"))
+  );
+}
 
 export function App(): JSXElement {
   // until monkey power owns its canvas (L3)
@@ -58,7 +69,9 @@ export function App(): JSXElement {
           "padding-top": `${getGlobalOffsetTop() + convertRemToPixels(2)}px`,
         }}
       >
-        <Header />
+        <Show when={!isKioskLeaderboard()}>
+          <Header />
+        </Show>
         <main class="full-width content-grid h-full">
           <Advertisement
             id="ad-vertical-left"
@@ -72,7 +85,9 @@ export function App(): JSXElement {
             vertical
           />
         </main>
-        <Footer />
+        <Show when={!isKioskLeaderboard()}>
+          <Footer />
+        </Show>
         <Advertisement id="ad-footer" visible={"sellout"} />
       </Anime>
       <DevTools />
