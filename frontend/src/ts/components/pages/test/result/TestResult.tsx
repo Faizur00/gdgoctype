@@ -13,11 +13,12 @@ import { getConfig } from "../../../../config/store";
 import { useRefWithUtils } from "../../../../hooks/useRefWithUtils";
 import { getAdBlock, getCookieBlocker } from "../../../../states/ads";
 import { getIsScreenshotting } from "../../../../states/core";
+import { nextPlayer } from "../../../../kiosk/player-state";
 import { getGlarsesMode } from "../../../../states/glarses-mode";
 import { resultState } from "../../../../states/result";
 import { getUserData } from "../../../../states/snapshot";
 import { getLastEventLog, getLastResult } from "../../../../states/test";
-import { restartTest, retrySavingResult } from "../../../../test/test-logic";
+import { retrySavingResult } from "../../../../test/test-logic";
 import { setResultElement } from "../../../../test/test-ui";
 import { cn } from "../../../../utils/cn";
 import {
@@ -29,12 +30,12 @@ import { adSlotClass, adSlotRef } from "../../../common/Advertisement";
 import { Button } from "../../../common/Button";
 import { Fa } from "../../../common/Fa";
 import { UserFlags } from "../../../common/UserFlags";
-import { ResultButtons } from "./ResultButtons";
 import { ResultChart } from "./ResultChart";
 import { ResultMainStats } from "./ResultMainStats";
 import { ResultReplay } from "./ResultReplay";
 import { ResultSecondaryStats } from "./ResultSecondaryStats";
 import { ResultWordsHistory } from "./ResultWordsHistory";
+import { ScoreSummary } from "./ScoreSummary";
 
 export function TestResult(): JSXElement {
   const lastTest = createMemo(() => {
@@ -60,6 +61,7 @@ export function TestResult(): JSXElement {
 
   return (
     <div id="result" ref={resultRef} class={cn("content-grid full-width")}>
+      <ScoreSummary />
       <Show when={getGlarsesMode()}>
         <div class="col-span-full pb-8 text-center text-[2rem]">
           <Fa icon="fa-check" />
@@ -74,7 +76,7 @@ export function TestResult(): JSXElement {
               class="mx-auto mt-4 w-max px-4 py-2"
               text="Restart"
               fa={{ icon: "fa-chevron-right" }}
-              onClick={() => void restartTest()}
+              onClick={nextPlayer}
             />
           </>
         }
@@ -97,8 +99,6 @@ export function TestResult(): JSXElement {
               <ResultReplay />
               <RetrySavingButton />
             </Show>
-            <ResultButtons glarses={getGlarsesMode()} />
-
             <Watermark />
           </div>
         )}

@@ -6,6 +6,7 @@ import { restartTest } from "../../test/test-logic";
 import { getRoutePage } from "../../states/router";
 import { hotkeys, quickRestartHotkeyMap } from "../../states/hotkeys";
 import { createHotkey } from "./utils";
+import { getPhase, nextPlayer } from "../../kiosk/player-state";
 import { getConfig } from "../../config/store";
 import { isLongTest, wordsHaveNewline, wordsHaveTab } from "../../states/test";
 
@@ -15,6 +16,12 @@ function quickRestart(e: KeyboardEvent): void {
   }
 
   e.preventDefault();
+
+  // kiosk: on the result screen the next test belongs to the next player
+  if (getPhase() === "result") {
+    nextPlayer();
+    return;
+  }
 
   if (getRoutePage() === "test") {
     void restartTest({ isQuickRestart: !e.shiftKey });

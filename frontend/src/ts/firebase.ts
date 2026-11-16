@@ -47,7 +47,17 @@ let readyCallback: ReadyCallback | undefined;
 const { promise: authPromise, resolve: resolveAuthPromise } =
   promiseWithResolvers();
 
+// kiosk: there are no accounts. Firebase is never initialized and the app
+// runs as signed out (same path as a failed init, without the error)
+const firebaseEnabled: boolean = false;
+
 export async function init(callback: ReadyCallback): Promise<void> {
+  if (!firebaseEnabled) {
+    await callback(false, null);
+    setUserState(null);
+    resolveAuthPromise();
+    return;
+  }
   try {
     let firebaseConfig: FirebaseOptions | null;
 
