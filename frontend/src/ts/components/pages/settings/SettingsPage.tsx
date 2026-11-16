@@ -22,7 +22,6 @@ import { Anime, AnimeShow } from "../../common/anime";
 import { Button } from "../../common/Button";
 import { Fa } from "../../common/Fa";
 import { CommandlineHotkey } from "../../hotkeys/CommandlineHotkey";
-import { AutoSwitchTheme } from "./custom-setting/AutoSwitchTheme";
 import { CustomBackground } from "./custom-setting/CustomBackground";
 import { CustomBackgroundFilters } from "./custom-setting/CustomBackgroundFilters";
 import { CustomLayoutfluid } from "./custom-setting/CustomLayoutfluid";
@@ -42,7 +41,6 @@ import { PaceCaret } from "./custom-setting/PaceCaret";
 import { Presets } from "./custom-setting/Presets";
 import { SoundVolume } from "./custom-setting/SoundVolume";
 import { Tags } from "./custom-setting/Tags";
-import { Theme } from "./custom-setting/Theme";
 import { QuickNav } from "./QuickNav";
 import { SearchableAutoSetting } from "./SearchableAutoSetting";
 import { SearchableSetting } from "./SearchableSetting";
@@ -177,9 +175,6 @@ export function SettingsPage(): JSXElement {
           <Show when={isCustomBackgroundLoaded()}>
             <CustomBackgroundFilters />
           </Show>
-          <AutoSwitchTheme />
-          <SearchableAutoSetting key="randomTheme" wide />
-          <Theme />
         </Section>
         <Advertisement id="ad-settings-3" visible="sellout" />
         <Section title="hide elements">

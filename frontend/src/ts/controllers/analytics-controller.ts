@@ -8,10 +8,14 @@ import { createErrorMessage } from "../utils/error";
 
 let analytics: AnalyticsType;
 
+// kiosk: analytics is disabled
+const analyticsEnabled: boolean = false;
+
 export async function log(
   eventName: string,
   params?: Record<string, string>,
 ): Promise<void> {
+  if (!analyticsEnabled) return;
   try {
     logEvent(analytics, eventName, params);
   } catch (e) {
@@ -20,6 +24,7 @@ export async function log(
 }
 
 export function activateAnalytics(): void {
+  if (!analyticsEnabled) return;
   if (analytics !== undefined) {
     console.warn("Analytics already activated");
     return;

@@ -128,8 +128,8 @@ function getPlugins({
       injectRegister: null,
       registerType: "autoUpdate",
       manifest: {
-        short_name: "Monkeytype",
-        name: "Monkeytype",
+        short_name: "GDGoC Type",
+        name: "GDGoC Type",
         start_url: "/",
         icons: [
           {

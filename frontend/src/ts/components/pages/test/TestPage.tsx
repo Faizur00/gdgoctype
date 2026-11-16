@@ -48,7 +48,6 @@ import { Monkey } from "./Monkey";
 import { OutOfFocusWarning } from "./OutOfFocusWarning";
 import { Premid } from "./Premid";
 import { TestResult } from "./result/TestResult";
-import { TestConfig } from "./TestConfig";
 import { TestInitFailed } from "./TestInitFailed";
 import { Words, wordsModeClasses } from "./Words";
 import { WordsInput } from "./WordsInput";
@@ -165,7 +164,6 @@ export function TestPage(): JSXElement {
   return (
     <>
       <div class="full-width">
-        <TestConfig />
       </div>
 
       <div

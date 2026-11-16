@@ -161,11 +161,6 @@ function signedInOnly(auth: RouterAuth): void {
   if (!auth.isSignedIn()) redirect({ to: "/login", throw: true });
 }
 
-function signedOutOnly(auth: RouterAuth): void {
-  if (!auth.isAvailable()) redirect({ to: "/", throw: true });
-  if (auth.isSignedIn()) redirect({ to: "/account", throw: true });
-}
-
 // each route renders its page, the page switcher fades between them
 const root = createRootRouteWithContext<RouterContext>()({
   component: PageSwitcher,
@@ -282,7 +277,8 @@ const login = createRoute({
   path: "/login",
   staticData: { page: "login" },
   component: createRouterPage(LoginPage),
-  beforeLoad: ({ context }) => signedOutOnly(context.auth),
+  // kiosk: login page is disabled
+  beforeLoad: () => redirect({ to: "/", throw: true }),
   // background data: start the fetch, the page shows its section loaders
   loader: ({ context: { queryClient } }) => {
     void queryClient.query(getServerConfigurationQueryOptions()).catch(noop);

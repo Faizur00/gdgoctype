@@ -1,7 +1,4 @@
-import * as ServerConfiguration from "./ape/server-configuration";
 import { configLoadPromise } from "./config/lifecycle";
-import * as MerchBanner from "./elements/merch-banner";
-import * as Psa from "./elements/psa";
 import { authPromise } from "./firebase";
 import { initConnection } from "./states/connection";
 import { setAppReady } from "./states/core";
@@ -9,18 +6,13 @@ import { isDevEnvironment } from "./utils/env";
 
 /** App startup work that doesn't touch the DOM. Call once, right after render. */
 export async function boot(): Promise<void> {
-  // before awaiting: PSAs show on the first auth state change
+  // kiosk: no PSAs and no server configuration sync (no backend)
   initConnection();
-  Psa.init();
 
   await configLoadPromise;
   await authPromise;
 
-  MerchBanner.showIfNotClosedBefore();
-
   setAppReady(true);
-
-  void ServerConfiguration.sync();
 
   registerServiceWorker();
 }

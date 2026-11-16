@@ -11,6 +11,7 @@ import {
 } from "./persistence";
 import { Config, setFullConfigStore } from "./store";
 import { getDefaultConfig } from "../constants/default-config";
+import { applyLockedConfig } from "../constants/locked-config";
 import { configEvent } from "../events/config";
 import { migrateConfig } from "./utils";
 import { promiseWithResolvers } from "../utils/misc";
@@ -76,7 +77,9 @@ export async function applyConfig(
   if (partialConfig === undefined || partialConfig === null) return;
 
   //migrate old values if needed, remove additional keys and merge with default config
-  const fullConfig: ConfigSchemas.Config = migrateConfig(partialConfig);
+  const fullConfig: ConfigSchemas.Config = applyLockedConfig(
+    migrateConfig(partialConfig),
+  );
 
   configEvent.dispatch({ key: "fullConfigChange" });
 

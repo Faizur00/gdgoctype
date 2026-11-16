@@ -7,7 +7,6 @@ import { cn } from "../../../utils/cn";
 import { Button } from "../../common/Button";
 import { isLoadingShown } from "../../core/PageSwitcher";
 import { Keytips } from "./Keytips";
-import { ThemeIndicator } from "./ThemeIndicator";
 import { VersionButton } from "./VersionButton";
 
 export function Footer(): JSXElement {
@@ -36,43 +35,15 @@ export function Footer(): JSXElement {
             }}
             onClick={() => showModal("Contact")}
           />
+          <span class="p-2 text-xs">GDGoC Unhas</span>
           <Button
             variant="text"
-            text="support"
-            fa={{
-              icon: "fa-donate",
-              fixedWidth: true,
-            }}
-            onClick={() => showModal("Support")}
-          />
-          <Button
-            variant="text"
-            text="github"
+            text="Berdasarkan Monkeytype (GPL-3.0)"
             fa={{
               icon: "fa-code",
               fixedWidth: true,
             }}
             href="https://github.com/monkeytypegame/monkeytype"
-          />
-          <Button
-            variant="text"
-            text="discord"
-            fa={{
-              icon: "fa-discord",
-              variant: "brand",
-              fixedWidth: true,
-            }}
-            href="https://www.discord.gg/monkeytype"
-          />
-          <Button
-            variant="text"
-            text="twitter"
-            fa={{
-              icon: "fa-twitter",
-              variant: "brand",
-              fixedWidth: true,
-            }}
-            href="https://x.com/monkeytype"
           />
           <Button
             variant="text"
@@ -103,7 +74,6 @@ export function Footer(): JSXElement {
           />
         </div>
         <div class="flex flex-col items-end text-right lg:flex-row">
-          <ThemeIndicator />
           <VersionButton />
         </div>
       </div>

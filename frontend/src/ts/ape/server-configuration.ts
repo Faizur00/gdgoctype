@@ -3,11 +3,12 @@ import { promiseWithResolvers } from "../utils/misc";
 import { queryClient } from "../queries";
 import { getServerConfigurationQueryOptions } from "../queries/server-configuration";
 
-const {
-  promise: configurationPromise,
-  resolve,
-  reject,
-} = promiseWithResolvers<boolean>();
+const { promise: configurationPromise, resolve } =
+  promiseWithResolvers<boolean>();
+
+// kiosk: no backend. resolve right away so nothing waits forever;
+// get() then returns undefined and callers use their fallbacks
+resolve(true);
 
 export { configurationPromise };
 
@@ -17,11 +18,7 @@ export function get(): Configuration | undefined {
   );
 }
 
-export async function sync(): Promise<void> {
-  try {
-    await queryClient.query(getServerConfigurationQueryOptions());
-    resolve(true);
-  } catch (e) {
-    reject(e);
-  }
+// kiosk: no request to the backend
+export function sync(): Promise<void> {
+  return Promise.resolve();
 }

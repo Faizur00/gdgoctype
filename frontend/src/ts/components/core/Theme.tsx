@@ -79,7 +79,7 @@ export function Theme(): JSXElement {
         />
       </Show>
       <Meta id="metaThemeColor" name="theme-color" content={getTheme().bg} />
-      <FavIcon theme={getTheme()} />
+      <FavIcon />
     </MetaProvider>
   );
 }
