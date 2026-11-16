@@ -2,6 +2,7 @@ import { JSXElement, onCleanup, onMount, Show } from "solid-js";
 import { debounce } from "throttle-debounce";
 
 import { Config, getConfig } from "../../../config/store";
+import { startQueueFlusher } from "../../../kiosk/score-queue";
 import { getCustomTextIndicator } from "../../../states/core";
 import { listenForModifierKeys } from "../../../states/modifiers";
 import { listenForMonkeyKeys } from "../../../states/monkey";
@@ -46,6 +47,7 @@ import { MemoryFunboxTimer } from "./MemoryFunboxTimer";
 import { TestModesNotice } from "./modes-notice/TestModesNotice";
 import { Monkey } from "./Monkey";
 import { OutOfFocusWarning } from "./OutOfFocusWarning";
+import { PlayerGate } from "./PlayerGate";
 import { Premid } from "./Premid";
 import { TestResult } from "./result/TestResult";
 import { TestInitFailed } from "./TestInitFailed";
@@ -73,6 +75,9 @@ export function TestPage(): JSXElement {
     const controller = new AbortController();
     onCleanup(() => controller.abort());
     const { signal } = controller;
+
+    // kiosk: retry unsent scores while the test page is open (not on /leaderboard)
+    signal.addEventListener("abort", startQueueFlusher(), { once: true });
 
     if (
       typingTestRef === undefined ||
@@ -130,7 +135,7 @@ export function TestPage(): JSXElement {
         }
         event.preventDefault();
         // Included for legacy support, e.g. Chrome/Edge < 119
-        // oxlint-disable-next-line no-deprecated
+        // oxlint-disable-next-line typescript/no-deprecated
         event.returnValue = "";
       },
       { signal },
@@ -277,6 +282,7 @@ export function TestPage(): JSXElement {
       <Show when={isResultShown()}>
         <TestResult />
       </Show>
+      <PlayerGate />
     </>
   );
 }

@@ -72,7 +72,7 @@ export function onScoreSent(listener: (id: string) => void): () => void {
 
 const inFlight = new Map<string, Promise<SendOutcome>>();
 
-function send(item: QueuedScore): Promise<SendOutcome> {
+async function send(item: QueuedScore): Promise<SendOutcome> {
   const running = inFlight.get(item.id);
   if (running !== undefined) return running;
 

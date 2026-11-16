@@ -1,3 +1,5 @@
+import { isGateOpen } from "../kiosk/phase";
+
 // #wordsInput is rendered by WordsInput and registered here on every mount
 let el: HTMLTextAreaElement | undefined;
 
@@ -50,6 +52,8 @@ export function isInputElementFocused(): boolean {
 }
 
 export function focusInputElement(preventScroll = false): void {
+  // kiosk: never steal the focus from the name gate (restart, resize, ...)
+  if (isGateOpen()) return;
   getInputElement().focus({
     preventScroll,
   });

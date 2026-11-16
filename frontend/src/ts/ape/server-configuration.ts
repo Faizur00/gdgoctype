@@ -18,7 +18,6 @@ export function get(): Configuration | undefined {
   );
 }
 
-// kiosk: no request to the backend
-export function sync(): Promise<void> {
-  return Promise.resolve();
+export async function sync(): Promise<void> {
+  // kiosk: no request to the backend (configurationPromise is already resolved)
 }

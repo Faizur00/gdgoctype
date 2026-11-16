@@ -9,9 +9,18 @@ export function normalizeName(raw: string): string {
     .trim();
 }
 
+/** length in code points (an emoji counts as one), not UTF-16 units */
+export function codePointLength(text: string): number {
+  return Array.from(text).length;
+}
+
+export function truncateToCodePoints(text: string, max: number): string {
+  return Array.from(text).slice(0, max).join("");
+}
+
 /** 1-24 characters (code points, not UTF-16 units) after normalizing */
 export function isValidName(name: string): boolean {
-  const length = [...name].length;
+  const length = codePointLength(name);
   return length >= 1 && length <= NAME_MAX_LENGTH;
 }
 
