@@ -1,4 +1,3 @@
-import { Link } from "@tanstack/solid-router";
 import { format } from "date-fns/format";
 import {
   createMemo,
@@ -13,12 +12,13 @@ import {
 import { getConfig } from "../../../../config/store";
 import { useRefWithUtils } from "../../../../hooks/useRefWithUtils";
 import { getAdBlock, getCookieBlocker } from "../../../../states/ads";
-import { getIsScreenshotting, isAuthenticated } from "../../../../states/core";
+import { getIsScreenshotting } from "../../../../states/core";
+import { retrySameName } from "../../../../kiosk/player-state";
 import { getGlarsesMode } from "../../../../states/glarses-mode";
 import { resultState } from "../../../../states/result";
 import { getUserData } from "../../../../states/snapshot";
 import { getLastEventLog, getLastResult } from "../../../../states/test";
-import { restartTest, retrySavingResult } from "../../../../test/test-logic";
+import { retrySavingResult } from "../../../../test/test-logic";
 import { setResultElement } from "../../../../test/test-ui";
 import { cn } from "../../../../utils/cn";
 import {
@@ -30,12 +30,12 @@ import { adSlotClass, adSlotRef } from "../../../common/Advertisement";
 import { Button } from "../../../common/Button";
 import { Fa } from "../../../common/Fa";
 import { UserFlags } from "../../../common/UserFlags";
-import { ResultButtons } from "./ResultButtons";
 import { ResultChart } from "./ResultChart";
 import { ResultMainStats } from "./ResultMainStats";
 import { ResultReplay } from "./ResultReplay";
 import { ResultSecondaryStats } from "./ResultSecondaryStats";
 import { ResultWordsHistory } from "./ResultWordsHistory";
+import { ScoreSummary } from "./ScoreSummary";
 
 export function TestResult(): JSXElement {
   const lastTest = createMemo(() => {
@@ -61,6 +61,7 @@ export function TestResult(): JSXElement {
 
   return (
     <div id="result" ref={resultRef} class={cn("content-grid full-width")}>
+      <ScoreSummary />
       <Show when={getGlarsesMode()}>
         <div class="col-span-full pb-8 text-center text-[2rem]">
           <Fa icon="fa-check" />
@@ -75,7 +76,7 @@ export function TestResult(): JSXElement {
               class="mx-auto mt-4 w-max px-4 py-2"
               text="Restart"
               fa={{ icon: "fa-chevron-right" }}
-              onClick={() => void restartTest()}
+              onClick={retrySameName}
             />
           </>
         }
@@ -97,26 +98,13 @@ export function TestResult(): JSXElement {
               <ResultWordsHistory eventLog={test().eventLog} />
               <ResultReplay />
               <RetrySavingButton />
-              <LoginPrompt />
             </Show>
-            <ResultButtons glarses={getGlarsesMode()} />
-
             <Watermark />
           </div>
         )}
       </Show>
       <ResultAds />
     </div>
-  );
-}
-
-function LoginPrompt(): JSXElement {
-  return (
-    <Show when={!isAuthenticated() && !getIsScreenshotting()}>
-      <div class="mb-4 text-center text-sub">
-        <Link to="/login">Sign in</Link> to save your result
-      </div>
-    </Show>
   );
 }
 

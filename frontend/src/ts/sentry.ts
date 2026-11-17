@@ -8,7 +8,11 @@ let debug = false;
 
 let activated = false;
 
+// kiosk: Sentry is disabled, it is never initialized and nothing is sent
+const sentryEnabled: boolean = false;
+
 export async function activateSentry(): Promise<void> {
+  if (!sentryEnabled) return;
   if (activated) {
     console.warn("Sentry already activated");
     return;

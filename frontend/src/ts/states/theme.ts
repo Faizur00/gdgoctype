@@ -11,17 +11,17 @@ export const [getRandomTheme, setRandomTheme] = createSignal<{
 } | null>(null);
 
 const defaultTheme: Theme & { name: ThemeIdentifier } = {
-  name: "serika_dark",
-  bg: "#323437",
-  main: "#e2b714",
-  caret: "#e2b714",
-  sub: "#646669",
-  subAlt: "#2c2e31",
-  text: "#d1d0c5",
-  error: "#ca4754",
-  errorExtra: "#7e2a33",
-  colorfulError: "#ca4754",
-  colorfulErrorExtra: "#7e2a33",
+  name: "gdgoc",
+  bg: "#fafafa",
+  main: "#4285f4",
+  caret: "#4285f4",
+  sub: "#80868b",
+  subAlt: "#f1f3f4",
+  text: "#202124",
+  error: "#ea4335",
+  errorExtra: "#c5221f",
+  colorfulError: "#ea4335",
+  colorfulErrorExtra: "#c5221f",
 };
 
 export const [getTheme, setTheme] = createSignal(defaultTheme);

@@ -23,7 +23,6 @@ import {
   getAdditionalUserInfo,
 } from "firebase/auth";
 import { promiseWithResolvers } from "./utils/misc";
-import { isDevEnvironment } from "./utils/env";
 import { createErrorMessage } from "./utils/error";
 
 import {
@@ -32,7 +31,6 @@ import {
 } from "firebase/analytics";
 import { tryCatch } from "@monkeytype/util/trycatch";
 import { showGoogleSignUpModal } from "./states/google-sign-up";
-import { addBanner } from "./states/banners";
 import { setUserId, setUserVerified } from "./states/core";
 
 let app: FirebaseApp | undefined;
@@ -49,7 +47,17 @@ let readyCallback: ReadyCallback | undefined;
 const { promise: authPromise, resolve: resolveAuthPromise } =
   promiseWithResolvers();
 
+// kiosk: there are no accounts. Firebase is never initialized and the app
+// runs as signed out (same path as a failed init, without the error)
+const firebaseEnabled: boolean = false;
+
 export async function init(callback: ReadyCallback): Promise<void> {
+  if (!firebaseEnabled) {
+    await callback(false, null);
+    setUserState(null);
+    resolveAuthPromise();
+    return;
+  }
   try {
     let firebaseConfig: FirebaseOptions | null;
 
@@ -79,13 +87,6 @@ export async function init(callback: ReadyCallback): Promise<void> {
     console.error("Firebase failed to initialize", e);
     await callback(false, null);
     setUserState(null);
-    if (isDevEnvironment()) {
-      addBanner({
-        level: "notice",
-        text: "Dev Info: Firebase failed to initialize",
-        icon: "fas fa-exclamation-triangle",
-      });
-    }
   } finally {
     resolveAuthPromise();
   }

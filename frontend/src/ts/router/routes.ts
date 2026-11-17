@@ -19,17 +19,13 @@ import { AboutPage } from "../components/pages/AboutPage";
 import { AccountSettingsPage } from "../components/pages/account-settings/AccountSettingsPage";
 import { AccountPage } from "../components/pages/account/AccountPage";
 import { FriendsPage } from "../components/pages/connections/FriendsPage";
-import { LeaderboardPage } from "../components/pages/leaderboard/LeaderboardPage";
+import { KioskLeaderboardPage } from "../components/pages/KioskLeaderboardPage";
 import { LoginPage } from "../components/pages/login/LoginPage";
 import { createRouterPage } from "../components/core/Page";
 import { ProfilePage } from "../components/pages/profile/ProfilePage";
 import { ProfileSearchPage } from "../components/pages/profile/ProfileSearchPage";
 import { SettingsPage } from "../components/pages/settings/SettingsPage";
 import { TestPage } from "../components/pages/test/TestPage";
-import {
-  getLeaderboardQueryOptions,
-  getRankQueryOptions,
-} from "../queries/leaderboards";
 import { getUserProfile } from "../queries/profile";
 import {
   getContributorsQueryOptions,
@@ -39,11 +35,7 @@ import {
 } from "../queries/public";
 import { getServerConfigurationQueryOptions } from "../queries/server-configuration";
 import { AccountSettingsSearchSchema } from "../states/account-settings";
-import {
-  getMissingLeaderboardSearch,
-  LeaderboardSearchSchema,
-  toSelection,
-} from "../states/leaderboard-selection";
+import { LeaderboardSearchSchema } from "../states/leaderboard-selection";
 import { SettingsSearchSchema } from "../states/settings-highlight";
 import { getUserData } from "../states/snapshot";
 import * as TodayTracker from "../test/today-tracker";
@@ -70,7 +62,7 @@ export type PageName =
   | "404"
   | "accountSettings"
   | "friends"
-  | "leaderboards";
+  | "kioskLeaderboard";
 
 declare module "@tanstack/solid-router" {
   // oxlint-disable-next-line typescript/consistent-type-definitions -- module augmentation needs an interface
@@ -161,11 +153,6 @@ function signedInOnly(auth: RouterAuth): void {
   if (!auth.isSignedIn()) redirect({ to: "/login", throw: true });
 }
 
-function signedOutOnly(auth: RouterAuth): void {
-  if (!auth.isAvailable()) redirect({ to: "/", throw: true });
-  if (auth.isSignedIn()) redirect({ to: "/account", throw: true });
-}
-
 // each route renders its page, the page switcher fades between them
 const root = createRootRouteWithContext<RouterContext>()({
   component: PageSwitcher,
@@ -208,51 +195,21 @@ const test = createRoute({
   },
 });
 
+// kiosk: the live leaderboard for the second laptop
+const kioskLeaderboard = createRoute({
+  getParentRoute: () => userDataRoute,
+  path: "/leaderboard",
+  staticData: { page: "kioskLeaderboard" },
+  component: createRouterPage(KioskLeaderboardPage),
+});
+
+// kiosk: the original (backend) leaderboards are gone, send to the live one
 const leaderboards = createRoute({
   getParentRoute: () => userDataRoute,
   path: "/leaderboards",
-  staticData: { page: "leaderboards" },
-  component: createRouterPage(LeaderboardPage),
+  // kept so the old (now unreachable) leaderboard code still type checks
   validateSearch: LeaderboardSearchSchema,
-  // the loader reads the selection and page only: other search writes (eg.
-  // dropping goToUserPage) don't re-run it
-  loaderDeps: ({ search }) => ({
-    type: search.type,
-    mode: search.mode,
-    mode2: search.mode2,
-    language: search.language,
-    yesterday: search.yesterday,
-    lastWeek: search.lastWeek,
-    friendsOnly: search.friendsOnly,
-    page: search.page,
-  }),
-  beforeLoad: ({ search }) => {
-    const missing = getMissingLeaderboardSearch(search);
-    if (missing !== undefined) {
-      redirect({
-        to: "/leaderboards",
-        search: missing,
-        replace: true,
-        throw: true,
-      });
-    }
-  },
-  // background data: start the fetches, the page shows its section loaders
-  loader: ({ context: { queryClient, auth }, deps }) => {
-    const selection = toSelection(deps);
-    void queryClient.query(getServerConfigurationQueryOptions()).catch(noop);
-    void queryClient
-      .query(
-        getLeaderboardQueryOptions({
-          ...selection,
-          page: (deps.page ?? 1) - 1,
-        }),
-      )
-      .catch(noop);
-    if (auth.isSignedIn()) {
-      void queryClient.query(getRankQueryOptions(selection)).catch(noop);
-    }
-  },
+  beforeLoad: () => redirect({ to: "/leaderboard", replace: true, throw: true }),
 });
 
 const about = createRoute({
@@ -282,7 +239,8 @@ const login = createRoute({
   path: "/login",
   staticData: { page: "login" },
   component: createRouterPage(LoginPage),
-  beforeLoad: ({ context }) => signedOutOnly(context.auth),
+  // kiosk: login page is disabled
+  beforeLoad: () => redirect({ to: "/", throw: true }),
   // background data: start the fetch, the page shows its section loaders
   loader: ({ context: { queryClient } }) => {
     void queryClient.query(getServerConfigurationQueryOptions()).catch(noop);
@@ -388,6 +346,7 @@ const friends = createRoute({
 export const routeTree = root.addChildren([
   userDataRoute.addChildren([
     test,
+    kioskLeaderboard,
     leaderboards,
     about,
     settings,

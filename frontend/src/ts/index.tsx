@@ -31,7 +31,6 @@ import { loadFromLocalStorage } from "./config/lifecycle";
 import { boot } from "./boot";
 
 import "./input/hotkeys";
-import { showModal } from "./states/modals";
 import { getLastEventLog } from "./states/test";
 import { buildEventLog } from "./test/events/data";
 
@@ -71,9 +70,7 @@ void fetchLatestVersion().then((data) => {
 });
 
 const accepted = Cookies.getAcceptedCookies();
-if (accepted === null) {
-  showModal("Cookies");
-}
+// kiosk: nothing is tracked (sentry and analytics are disabled), so no cookie banner
 void init(onAuthStateChanged).then(() => {
   if (accepted !== null) {
     Cookies.activateWhatsAccepted();

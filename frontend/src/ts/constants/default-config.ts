@@ -1,9 +1,9 @@
 import { Config, CustomThemeColors } from "@monkeytype/schemas/configs";
 
 const obj: Config = {
-  theme: "serika_dark",
-  themeLight: "serika",
-  themeDark: "serika_dark",
+  theme: "gdgoc",
+  themeLight: "gdgoc",
+  themeDark: "gdgoc",
   autoSwitchTheme: false,
   customTheme: false,
   customThemeColors: [
@@ -26,7 +26,7 @@ const obj: Config = {
   punctuation: false,
   numbers: false,
   words: 50,
-  time: 30,
+  time: 60,
   mode: "time",
   quoteLength: [1],
   language: "english",
@@ -80,7 +80,7 @@ const obj: Config = {
   highlightMode: "letter",
   typedEffect: "keep",
   typingSpeedUnit: "wpm",
-  ads: "result",
+  ads: "off",
   hideExtraLetters: false,
   strictSpace: false,
   minAcc: "off",

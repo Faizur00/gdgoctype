@@ -16,6 +16,7 @@ import { isConfigValueValid } from "./validation";
 import { FunboxName } from "@monkeytype/schemas/configs";
 import { typedKeys } from "@monkeytype/util/objects";
 import { isTestActive } from "../states/test";
+import { violatesLockedConfig } from "../constants/locked-config";
 
 export function setConfig<T extends keyof ConfigSchemas.Config>(
   key: T,
@@ -28,6 +29,9 @@ export function setConfig<T extends keyof ConfigSchemas.Config>(
   if (metadata === undefined) {
     throw new Error(`Config metadata for key "${key}" is not defined.`);
   }
+
+  // kiosk: locked keys only accept their locked value (silent, no notification)
+  if (violatesLockedConfig(key, value)) return false;
 
   if (metadata.overrideValue) {
     value = metadata.overrideValue({
@@ -102,6 +106,15 @@ export function setConfig<T extends keyof ConfigSchemas.Config>(
       value,
       currentConfig: Config,
     });
+
+    // kiosk: don't half-apply (and don't throw below) if an override would break the lock
+    if (
+      typedKeys(targetConfig).some((k) =>
+        violatesLockedConfig(k, targetConfig[k]),
+      )
+    ) {
+      return false;
+    }
 
     for (const targetKey of typedKeys(targetConfig)) {
       const targetValue = targetConfig[

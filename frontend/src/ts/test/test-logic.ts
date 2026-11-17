@@ -111,6 +111,7 @@ import { SnapshotResult } from "../constants/default-snapshot";
 import { WordGenError } from "../utils/word-gen-error";
 import { tryCatch } from "@monkeytype/util/trycatch";
 import * as Sentry from "../sentry";
+import { reportFinishedTest } from "../kiosk/score-flow";
 import { showLoaderBar, hideLoaderBar } from "../states/loader-bar";
 import { canQuickRestart } from "../utils/quick-restart";
 import {
@@ -892,6 +893,8 @@ export async function finish(difficultyFailed = false): Promise<void> {
   }
 
   let dontSave = false;
+  // kiosk: why the test is invalid, shown on the result screen
+  let invalidReason: string | null = null;
 
   if (countUndefined(ce) > 0) {
     console.log(ce);
@@ -899,6 +902,7 @@ export async function finish(difficultyFailed = false): Promise<void> {
       "Failed to build result object: One of the fields is undefined or NaN",
     );
     dontSave = true;
+    invalidReason = "hasil tes tidak bisa dihitung";
   }
 
   const completedEvent = structuredClone(ce) as CompletedEvent;
@@ -928,6 +932,7 @@ export async function finish(difficultyFailed = false): Promise<void> {
     ce.testDuration <= 120
   ) {
     showNoticeNotification("Test invalid - inconsistent test duration");
+    invalidReason = "durasi tes tidak konsisten";
     console.error("Test duration inconsistent", ce.testDuration, dateDur);
     setIsTestInvalid(true);
     dontSave = true;
@@ -936,6 +941,10 @@ export async function finish(difficultyFailed = false): Promise<void> {
       durationMs: 1000,
     });
     dontSave = true;
+    invalidReason =
+      failReason === "slow timer"
+        ? "timer browser tersendat (tab tidak aktif atau komputer lambat), coba lagi"
+        : "tes gagal";
   } else if (
     completedEvent.testDuration < 1 ||
     (Config.mode === "time" && mode2Number < 15 && mode2Number > 0) ||
@@ -956,15 +965,18 @@ export async function finish(difficultyFailed = false): Promise<void> {
     (Config.mode === "zen" && completedEvent.testDuration < 15)
   ) {
     showNoticeNotification("Test invalid - too short");
+    invalidReason = "tes terlalu singkat";
     setIsTestInvalid(true);
     tooShort = true;
     dontSave = true;
   } else if (afkDetected) {
     showNoticeNotification("Test invalid - AFK detected");
+    invalidReason = "tidak ada ketikan di akhir tes";
     setIsTestInvalid(true);
     dontSave = true;
   } else if (isRepeated()) {
     showNoticeNotification("Test invalid - repeated");
+    invalidReason = "tes diulang";
     setIsTestInvalid(true);
     dontSave = true;
   } else if (
@@ -977,6 +989,7 @@ export async function finish(difficultyFailed = false): Promise<void> {
       completedEvent.mode2 === "10")
   ) {
     showNoticeNotification("Test invalid - wpm");
+    invalidReason = "nilai WPM di luar batas wajar";
     setIsTestInvalid(true);
     dontSave = true;
   } else if (
@@ -989,18 +1002,25 @@ export async function finish(difficultyFailed = false): Promise<void> {
       completedEvent.mode2 === "10")
   ) {
     showNoticeNotification("Test invalid - raw");
+    invalidReason = "nilai WPM mentah di luar batas wajar";
     setIsTestInvalid(true);
     dontSave = true;
-  } else if (
-    (!DB.getUserData()?.lbOptOut &&
-      (completedEvent.acc < 75 || completedEvent.acc > 100)) ||
-    (DB.getUserData()?.lbOptOut === true &&
-      (completedEvent.acc < 50 || completedEvent.acc > 100))
-  ) {
+  } else if (completedEvent.acc < 0 || completedEvent.acc > 100) {
+    // kiosk: no minimum accuracy (the score is net wpm, random typing scores low)
     showNoticeNotification("Test invalid - accuracy");
+    invalidReason = "akurasi di luar batas wajar";
     setIsTestInvalid(true);
     dontSave = true;
   }
+
+  // kiosk: the score goes to our leaderboard. Captured here, before the
+  // "logged out" branch below forces dontSave = true
+  const validForScore = !dontSave && !isTestInvalid();
+  reportFinishedTest({
+    wpm: completedEvent.wpm,
+    accuracy: completedEvent.acc,
+    invalidReason: validForScore ? null : (invalidReason ?? "tes tidak valid"),
+  });
 
   // test is valid
 

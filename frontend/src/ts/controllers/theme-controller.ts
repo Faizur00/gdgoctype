@@ -57,11 +57,15 @@ export function convertThemeToCustomColors(theme: Theme): CustomThemeColors {
 }
 
 async function apply(
-  themeName: ThemeIdentifier,
+  requestedTheme: ThemeIdentifier,
   customColorsOverride?: CustomThemeColors,
   isPreview = false,
 ): Promise<void> {
+  // theme is locked to gdgoc, requested theme is ignored
+  // assertion keeps the declared union type (no narrowing to the literal)
+  const themeName = "gdgoc" as ThemeIdentifier;
   console.debug(`Theme controller applying theme ${themeName}`, {
+    requestedTheme,
     customColorsOverride,
     isPreview,
   });

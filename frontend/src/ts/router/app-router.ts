@@ -67,8 +67,10 @@ router.subscribe("onResolved", () => {
 function updatePageTitle(page: PageName): void {
   if (page === "test") {
     updateTitle();
+  } else if (page === "kioskLeaderboard") {
+    updateTitle("Leaderboard | GDGoC Type");
   } else {
-    updateTitle(`${capitalizeFirstLetterOfEachWord(page)} | Monkeytype`);
+    updateTitle(`${capitalizeFirstLetterOfEachWord(page)} | GDGoC Type`);
   }
 }
 

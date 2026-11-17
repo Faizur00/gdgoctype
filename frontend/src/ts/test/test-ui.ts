@@ -46,6 +46,7 @@ import {
 import { untrack } from "solid-js";
 import { setResultShown } from "../states/result";
 import { isTestPageMounted, markTestPageMounted } from "./test-page-state";
+import { isGateOpen } from "../kiosk/phase";
 
 // rendered by TestPage, registered via init() on every mount
 let typingTestRef: ElementWithUtils | undefined;
@@ -310,6 +311,8 @@ export function init(
 
 function autofocusWords(e: KeyboardEvent): void {
   if (e.key === undefined) return;
+  // kiosk: the name gate owns the focus
+  if (isGateOpen()) return;
 
   if (isDevEnvironment()) {
     if (

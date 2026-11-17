@@ -1,0 +1,145 @@
+@font-face {
+  font-family: "Outfit";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("/webfonts-ui/Outfit-Variable.woff2") format("woff2");
+}
+
+:root {
+  --gdg-blue: #4285f4;
+  --gdg-red: #ea4335;
+  --gdg-yellow: #fbbc04;
+  --gdg-green: #34a853;
+  --font-ui: "Outfit", "Roboto", system-ui, sans-serif;
+}
+
+/* latar: grid halus + blob blur lembut biru/kuning */
+body {
+  background-color: var(--bg-color);
+  background-image:
+    radial-gradient(
+      circle 38rem at 0% 0%,
+      rgb(66 133 244 / 0.16),
+      transparent 70%
+    ),
+    radial-gradient(
+      circle 34rem at 100% 100%,
+      rgb(251 188 4 / 0.18),
+      transparent 70%
+    ),
+    radial-gradient(
+      circle 22rem at 100% 0%,
+      rgb(66 133 244 / 0.08),
+      transparent 70%
+    ),
+    linear-gradient(rgb(32 33 36 / 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(32 33 36 / 0.045) 1px, transparent 1px);
+  background-size:
+    auto,
+    auto,
+    auto,
+    40px 40px,
+    40px 40px;
+  background-attachment: fixed;
+}
+
+/* font UI (heading/menu/tombol). area tes tetap --font (monospace) */
+header,
+footer,
+.textButton,
+.button,
+h1,
+h2,
+h3,
+[data-nav-item] {
+  font-family: var(--font-ui);
+}
+
+/* tombol pill */
+.button,
+.textButton,
+[data-nav-item] {
+  border-radius: 999px;
+}
+
+/* nav: pill berwarna 4 warna Google */
+[data-nav-item] {
+  --themable-button-text: #fff;
+  --themable-button-hover-text: #fff;
+}
+[data-nav-item]:hover {
+  filter: brightness(1.06);
+}
+[data-nav-item="test"] {
+  background: var(--gdg-blue);
+}
+[data-nav-item="leaderboards"] {
+  background: var(--gdg-green);
+}
+[data-nav-item="about"] {
+  background: var(--gdg-yellow);
+  --themable-button-text: #202124;
+  --themable-button-hover-text: #202124;
+}
+[data-nav-item="settings"] {
+  background: var(--gdg-red);
+}
+[data-nav-item="alerts"],
+[data-nav-item="login"],
+[data-nav-item="account"] {
+  background: transparent;
+  --themable-button-text: var(--sub-color);
+  --themable-button-hover-text: var(--text-color);
+}
+header[data-focused] [data-nav-item] {
+  background: var(--sub-alt-color);
+}
+
+/* hasil tes: wpm tetap biru (main), acc hijau */
+[data-ui-element="resultStat"]:last-child [data-ui-element="resultStatValue"] {
+  color: var(--gdg-green);
+}
+
+/* dekorasi: bentuk geometris di sudut, di belakang konten, tidak bisa diklik */
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  z-index: -1;
+  width: clamp(9rem, 22vw, 20rem);
+  aspect-ratio: 1;
+  background-repeat: no-repeat;
+  background-size: contain;
+  opacity: 0.3;
+  pointer-events: none;
+}
+body::before {
+  top: 0;
+  right: 0;
+  background-image: url("/images/deco/gdgoc-deco-tr.svg");
+  background-position: top right;
+}
+body::after {
+  bottom: 0;
+  left: 0;
+  background-image: url("/images/deco/gdgoc-deco-bl.svg");
+  background-position: bottom left;
+}
+
+/* HP: lebih kecil dan lebih pudar */
+@media (max-width: 640px) {
+  body::before,
+  body::after {
+    width: 6.5rem;
+    opacity: 0.22;
+  }
+}
+
+/* sembunyikan saat screenshot hasil tes */
+@media print {
+  body::before,
+  body::after {
+    display: none;
+  }
+}

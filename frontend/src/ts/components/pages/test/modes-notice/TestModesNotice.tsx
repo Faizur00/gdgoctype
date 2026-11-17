@@ -14,12 +14,8 @@ import {
   wordsHaveNewline,
   wordsHaveTab,
 } from "../../../../states/test";
-import { getActiveFunboxNames } from "../../../../test/funbox/list";
 import { cn } from "../../../../utils/cn";
-import {
-  getLanguageDisplayString,
-  replaceUnderscoresWithSpaces,
-} from "../../../../utils/strings";
+import { replaceUnderscoresWithSpaces } from "../../../../utils/strings";
 import { Kbd } from "../../../common/Kbd";
 import { AverageNotice } from "./AverageNotice";
 import { Notice } from "./Notice";
@@ -41,7 +37,6 @@ export function TestModesNotice() {
       <LongText />
       <LoadedChallenge />
       <ZenMode />
-      <Language />
       <Difficulty />
       <BlindMode />
       <LazyMode />
@@ -140,38 +135,6 @@ function ZenMode() {
     <Notice when={getConfig.mode === "zen"}>
       <Kbd hotkey="Shift+Enter" /> to finish zen
     </Notice>
-  );
-}
-
-function Language() {
-  const isUsingPolyglot = createMemo(() => {
-    //react on config.funbox
-    const _ = getConfig.funbox;
-    return getActiveFunboxNames().includes("polyglot");
-  });
-
-  return (
-    <>
-      <Notice
-        when={getConfig.mode !== "zen" && !isUsingPolyglot()}
-        icon="fa-globe-americas"
-        openCommandline="language"
-        text={getLanguageDisplayString(
-          getConfig.language,
-          getConfig.mode === "quote",
-        )}
-      />
-      <Notice
-        when={getConfig.funbox.includes("polyglot")}
-        icon="fa-globe-americas"
-        onClick={() =>
-          showCommandline({ commandOverride: "setCustomPolyglotCustom" })
-        }
-        text={getConfig.customPolyglot
-          .map((lang) => getLanguageDisplayString(lang, true))
-          .join(", ")}
-      />
-    </>
   );
 }
 
