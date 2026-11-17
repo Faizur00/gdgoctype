@@ -13,7 +13,7 @@ import { getConfig } from "../../../../config/store";
 import { useRefWithUtils } from "../../../../hooks/useRefWithUtils";
 import { getAdBlock, getCookieBlocker } from "../../../../states/ads";
 import { getIsScreenshotting } from "../../../../states/core";
-import { nextPlayer } from "../../../../kiosk/player-state";
+import { retrySameName } from "../../../../kiosk/player-state";
 import { getGlarsesMode } from "../../../../states/glarses-mode";
 import { resultState } from "../../../../states/result";
 import { getUserData } from "../../../../states/snapshot";
@@ -76,7 +76,7 @@ export function TestResult(): JSXElement {
               class="mx-auto mt-4 w-max px-4 py-2"
               text="Restart"
               fa={{ icon: "fa-chevron-right" }}
-              onClick={nextPlayer}
+              onClick={retrySameName}
             />
           </>
         }

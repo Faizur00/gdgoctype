@@ -10,6 +10,11 @@ import {
 import { createStore, reconcile } from "solid-js/store";
 
 import { fetchTop, type LeaderboardRow } from "../../kiosk/api";
+import {
+  isLeaderboardHidden,
+  isSessionOpen,
+  startEventStatePolling,
+} from "../../kiosk/event-state";
 import { cn } from "../../utils/cn";
 
 const TOP_COUNT = 10;
@@ -137,6 +142,13 @@ export function KioskLeaderboardPage(): JSXElement {
     const poll = async (): Promise<void> => {
       controller = new AbortController();
       try {
+        if (isLeaderboardHidden()) {
+          // hidden by the organizers: show nothing and don't even fetch the
+          // standings. Start fresh (no animation) when it is revealed
+          setRows(reconcile([]));
+          setHasLoaded(false);
+          return;
+        }
         const data = await fetchTop(TOP_COUNT, controller.signal);
         if (stopped) return;
         failures = 0;
@@ -151,8 +163,10 @@ export function KioskLeaderboardPage(): JSXElement {
       }
     };
     void poll();
+    const stopEventState = startEventStatePolling();
 
     onCleanup(() => {
+      stopEventState();
       stopped = true;
       controller?.abort();
       if (pollTimer !== undefined) clearTimeout(pollTimer);
@@ -173,14 +187,24 @@ export function KioskLeaderboardPage(): JSXElement {
         </div>
       </Show>
 
+      <Show when={!isSessionOpen()}>
+        <div
+          role="status"
+          class="fixed top-4 left-4 z-50 rounded-full bg-[#ea4335] px-4 py-2 text-sm text-white shadow"
+        >
+          Sesi ditutup
+        </div>
+      </Show>
+
       <header class="flex flex-col items-center gap-3 text-center">
         <img src="/images/gdgoc-logo.svg" alt="GDGoC" class="h-20 w-auto" />
         <h1 class="text-5xl text-text">Leaderboard</h1>
         <p class="text-lg text-sub">
-          GDGoC Unhas · Welcoming Member · Tes 20 detik
+          GDGoC Unhas · Welcoming Member · Tes 1 menit
         </p>
       </header>
 
+      <Show when={!isLeaderboardHidden()} fallback={<HiddenLeaderboard />}>
       <Show
         when={rows.length > 0}
         fallback={
@@ -203,14 +227,24 @@ export function KioskLeaderboardPage(): JSXElement {
           </For>
         </ol>
       </Show>
+      </Show>
 
-      <Show when={updatedAt()}>
+      <Show when={!isLeaderboardHidden() && updatedAt()}>
         {(time) => (
           <p class="mt-auto text-sm text-sub">
             Diperbarui {time().toLocaleTimeString("id-ID")}
           </p>
         )}
       </Show>
+    </div>
+  );
+}
+
+function HiddenLeaderboard(): JSXElement {
+  return (
+    <div class="mt-8 flex flex-col items-center gap-4 text-center">
+      <p class="text-6xl text-text">Leaderboard Hidden</p>
+      <p class="text-2xl text-sub">Skor disembunyikan sampai pengumuman.</p>
     </div>
   );
 }

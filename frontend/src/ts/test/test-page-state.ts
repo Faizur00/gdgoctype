@@ -3,6 +3,7 @@
 // Solid TestPage. Remove it once no imperative code needs to know.
 import { createSignal, untrack } from "solid-js";
 
+import { isSessionOpen } from "../kiosk/event-state";
 import { isGateOpen } from "../kiosk/phase";
 import { getRoutePage, isLeavingPage } from "../states/router";
 
@@ -28,6 +29,11 @@ export function isTestPageMounted(): boolean {
  * place (eg. signing in) doesn't stop it.
  */
 export function canStartTest(): boolean {
-  // kiosk: no test before a player name is confirmed
-  return getRoutePage() === "test" && !isLeavingPage() && !isGateOpen();
+  // kiosk: no test before a player name is confirmed or after the session closed
+  return (
+    getRoutePage() === "test" &&
+    !isLeavingPage() &&
+    !isGateOpen() &&
+    isSessionOpen()
+  );
 }

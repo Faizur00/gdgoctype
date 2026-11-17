@@ -10,10 +10,32 @@ import { createSignal } from "solid-js";
  */
 export type PlayerPhase = "gate" | "playing" | "result";
 
-const [getPhase, setPhase] = createSignal<PlayerPhase>("gate");
-const [getPlayerName, setPlayerName] = createSignal("");
+const NAME_STORAGE_KEY = "gdgoc.playerName.v1";
 
-export { getPhase, setPhase, getPlayerName, setPlayerName };
+// the name is remembered on this device (everyone plays on their own laptop
+// and retries with the same name). localStorage can throw: best effort
+function loadName(): string {
+  try {
+    return localStorage.getItem(NAME_STORAGE_KEY) ?? "";
+  } catch {
+    return "";
+  }
+}
+
+const [getPhase, setPhase] = createSignal<PlayerPhase>("gate");
+const [getPlayerName, setPlayerNameSignal] = createSignal(loadName());
+
+export function setPlayerName(name: string): void {
+  setPlayerNameSignal(name);
+  try {
+    if (name === "") localStorage.removeItem(NAME_STORAGE_KEY);
+    else localStorage.setItem(NAME_STORAGE_KEY, name);
+  } catch {
+    // keep going with the in-memory name
+  }
+}
+
+export { getPhase, setPhase, getPlayerName };
 
 export function isGateOpen(): boolean {
   return getPhase() === "gate";

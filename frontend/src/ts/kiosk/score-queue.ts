@@ -4,7 +4,7 @@ const STORAGE_KEY = "gdgoc.scoreQueue.v1";
 const MAX_QUEUE = 200;
 const FLUSH_INTERVAL_MS = 15_000;
 
-export type SendOutcome = "sent" | "queued" | "rejected";
+export type SendOutcome = "sent" | "queued" | "closed" | "rejected";
 
 type QueuedScore = ScoreInput & { queuedAt: number };
 
@@ -70,6 +70,14 @@ export function onScoreSent(listener: (id: string) => void): () => void {
   return () => sentListeners.delete(listener);
 }
 
+const closedListeners = new Set<(id: string) => void>();
+
+/** Called when the database refused a queued score because the session is closed. */
+export function onScoreClosed(listener: (id: string) => void): () => void {
+  closedListeners.add(listener);
+  return () => closedListeners.delete(listener);
+}
+
 const inFlight = new Map<string, Promise<SendOutcome>>();
 
 async function send(item: QueuedScore): Promise<SendOutcome> {
@@ -82,6 +90,12 @@ async function send(item: QueuedScore): Promise<SendOutcome> {
       remove(item.id);
       for (const listener of sentListeners) listener(item.id);
       return "sent";
+    }
+    if (result === "closed") {
+      // too late: the session is closed, the score will never be accepted
+      remove(item.id);
+      for (const listener of closedListeners) listener(item.id);
+      return "closed";
     }
     if (result === "rejected") {
       console.warn("Score rejected, dropped from the queue", item.id);

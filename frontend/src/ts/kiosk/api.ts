@@ -14,8 +14,16 @@ export type ScoreInput = {
   accuracy: number;
 };
 
-/** ok: stored (201, or 409 = same id already stored). retry: try again later. rejected: will never work. */
-export type InsertResult = "ok" | "retry" | "rejected";
+// same as the database constraint on scores.wpm (nobody types faster)
+const MAX_WPM = 200;
+
+/**
+ * ok: stored (201, or 409 = same id already stored).
+ * retry: try again later.
+ * closed: the organizers closed the session, the database refused the score.
+ * rejected: will never work.
+ */
+export type InsertResult = "ok" | "retry" | "closed" | "rejected";
 
 export type LeaderboardRow = {
   peringkat: number;
@@ -26,7 +34,18 @@ export type LeaderboardRow = {
   created_at: string;
 };
 
-export type RankInfo = { peringkat: number; total: number };
+export type RankInfo = {
+  peringkat: number;
+  total: number;
+  /** the best wpm of this name (what the leaderboard shows) */
+  bestWpm: number | null;
+};
+
+export type EventState = {
+  open: boolean;
+  leaderboardHidden: boolean;
+  endsAt: Date | null;
+};
 
 type RequestOptions = {
   method?: "GET" | "POST";
@@ -85,7 +104,7 @@ export async function insertScore(score: ScoreInput): Promise<InsertResult> {
     !isValidName(body.name) ||
     !Number.isFinite(body.wpm) ||
     body.wpm < 0 ||
-    body.wpm > 350 ||
+    body.wpm > MAX_WPM ||
     !Number.isFinite(body.accuracy) ||
     body.accuracy < 0 ||
     body.accuracy > 100
@@ -108,10 +127,14 @@ export async function insertScore(score: ScoreInput): Promise<InsertResult> {
   }
 
   if (response.status === 201 || response.status === 409) return "ok";
-  // 401/403 are retried too (a fixed key/policy must not lose queued scores)
+  // the INSERT policy refuses scores while the session is closed
+  if (response.status === 401 || response.status === 403) {
+    const text = await response.text().catch(() => "");
+    if (text.includes("row-level security")) return "closed";
+    // any other 401/403 (key or policy problem): keep the score, retry later
+    return "retry";
+  }
   if (
-    response.status === 401 ||
-    response.status === 403 ||
     response.status === 408 ||
     response.status === 429 ||
     response.status >= 500
@@ -189,7 +212,7 @@ export async function fetchRank(
 ): Promise<RankInfo | null> {
   const key = encodeURIComponent(nameKey(name));
   const [rankResponse, countResponse] = await Promise.all([
-    request(`/leaderboard?name_key=eq.${key}&select=peringkat&limit=1`, {
+    request(`/leaderboard?name_key=eq.${key}&select=peringkat,wpm&limit=1`, {
       signal,
     }),
     request("/leaderboard?select=peringkat&limit=1", {
@@ -202,16 +225,49 @@ export async function fetchRank(
 
   const rows: unknown = await rankResponse.json();
   const first: unknown = Array.isArray(rows) ? rows[0] : undefined;
-  const peringkat =
+  const firstRow =
     typeof first === "object" && first !== null
-      ? toNumber((first as Record<string, unknown>)["peringkat"])
-      : null;
+      ? (first as Record<string, unknown>)
+      : undefined;
+  const peringkat = toNumber(firstRow?.["peringkat"]);
   if (peringkat === null) return null;
+  const bestWpm = toNumber(firstRow?.["wpm"]);
 
   // Content-Range looks like "0-0/42" (or "*/0")
   const match = /\/(\d+)$/.exec(
     countResponse.headers.get("content-range") ?? "",
   );
   if (match === null) return null;
-  return { peringkat, total: Number(match[1]) };
+  return { peringkat, total: Number(match[1]), bestWpm };
+}
+
+/**
+ * The session state set by the organizers. null if the table has no row.
+ * Throws on network errors or if the table is missing.
+ */
+export async function fetchEventState(
+  signal?: AbortSignal,
+): Promise<EventState | null> {
+  const response = await request(
+    "/event_state?select=open,leaderboard_hidden,ends_at&limit=1",
+    { signal },
+  );
+  if (!response.ok) throw new Error(`event_state ${response.status}`);
+  const data: unknown = await response.json();
+  const row: unknown = Array.isArray(data) ? data[0] : undefined;
+  if (typeof row !== "object" || row === null) return null;
+  const record = row as Record<string, unknown>;
+  if (
+    typeof record["open"] !== "boolean" ||
+    typeof record["leaderboard_hidden"] !== "boolean"
+  ) {
+    return null;
+  }
+  const endsRaw = record["ends_at"];
+  const endsAt = typeof endsRaw === "string" ? new Date(endsRaw) : null;
+  return {
+    open: record["open"],
+    leaderboardHidden: record["leaderboard_hidden"],
+    endsAt: endsAt !== null && !Number.isNaN(endsAt.getTime()) ? endsAt : null,
+  };
 }

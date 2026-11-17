@@ -26,7 +26,7 @@ const obj: Config = {
   punctuation: false,
   numbers: false,
   words: 50,
-  time: 20,
+  time: 60,
   mode: "time",
   quoteLength: [1],
   language: "english",

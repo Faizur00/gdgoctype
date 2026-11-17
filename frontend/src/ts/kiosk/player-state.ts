@@ -35,8 +35,8 @@ export async function confirmPlayer(rawName: string): Promise<boolean> {
   return true;
 }
 
-/** Next person: back to the name gate with an empty name and a fresh test. */
-export function nextPlayer(): void {
+/** Change the name: back to the name gate with an empty name and a fresh test. */
+export function changeName(): void {
   setPlayerName("");
   setPhase("gate");
   void restartTest();

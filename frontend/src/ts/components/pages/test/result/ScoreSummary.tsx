@@ -1,10 +1,7 @@
-import { createSignal, JSXElement, onCleanup, onMount, Show } from "solid-js";
+import { JSXElement, Show } from "solid-js";
 
-import {
-  getPhase,
-  nextPlayer,
-  retrySameName,
-} from "../../../../kiosk/player-state";
+import { isLeaderboardHidden } from "../../../../kiosk/event-state";
+import { changeName, retrySameName } from "../../../../kiosk/player-state";
 import {
   getScoreView,
   type InvalidScoreView,
@@ -13,14 +10,16 @@ import {
 } from "../../../../kiosk/score-flow";
 import { Button } from "../../../common/Button";
 
-const COUNTDOWN_SECONDS = 10;
-
 const statusText: Record<SendStatus, string> = {
   sending: "Mengirim skor…",
   sent: "Skor terkirim ✓",
   queued: "Tersimpan offline, akan dikirim ulang",
+  closed: "Sesi sudah ditutup, skor tidak tersimpan",
   failed: "Skor gagal disimpan",
 };
+
+const cardClass =
+  "mx-auto mb-6 flex w-full max-w-xl flex-col items-center gap-3 rounded-3xl bg-sub-alt p-6 text-center";
 
 export function ScoreSummary(): JSXElement {
   const valid = (): ValidScoreView | undefined => {
@@ -34,51 +33,28 @@ export function ScoreSummary(): JSXElement {
 
   return (
     <>
-      <Show when={valid()}>
-        {(view) => <ValidScore view={view()} />}
-      </Show>
+      <Show when={valid()}>{(view) => <ValidScore view={view()} />}</Show>
       <Show when={invalid()}>{(view) => <InvalidScore view={view()} />}</Show>
     </>
   );
 }
 
-const cardClass =
-  "mx-auto mb-6 flex w-full max-w-xl flex-col items-center gap-3 rounded-3xl bg-sub-alt p-6 text-center";
-
 function ValidScore(props: { view: ValidScoreView }): JSXElement {
-  const [left, setLeft] = createSignal(COUNTDOWN_SECONDS);
-  let timer: ReturnType<typeof setInterval> | undefined;
-
-  const stop = (): void => {
-    if (timer === undefined) return;
-    clearInterval(timer);
-    timer = undefined;
-  };
-
-  const next = (): void => {
-    stop();
-    nextPlayer();
-  };
-
-  onMount(() => {
-    timer = setInterval(() => {
-      // the screen was left some other way (hotkey): don't fire a second time
-      if (getPhase() !== "result") {
-        stop();
-        return;
-      }
-      const remaining = left() - 1;
-      setLeft(remaining);
-      if (remaining <= 0) next();
-    }, 1000);
-  });
-  onCleanup(stop);
-
   const rankText = (): string => {
+    // the organizers hide the standings near the end: don't leak the rank
+    if (isLeaderboardHidden()) return "Peringkat disembunyikan";
     const { rank, rankLoading, status } = props.view;
     if (rank !== null) return `Peringkat #${rank.peringkat} dari ${rank.total}`;
     if (rankLoading || status === "sending") return "Peringkat…";
     return "Peringkat —";
+  };
+
+  const bestText = (): string | undefined => {
+    if (isLeaderboardHidden()) return undefined;
+    const best = props.view.rank?.bestWpm;
+    return best === null || best === undefined
+      ? undefined
+      : `Skor terbaikmu ${best.toFixed(2)}`;
   };
 
   return (
@@ -92,18 +68,25 @@ function ValidScore(props: { view: ValidScoreView }): JSXElement {
         Akurasi {props.view.accuracy.toFixed(1)}%
       </p>
       <p class="text-2xl text-text">{rankText()}</p>
+      <Show when={bestText()}>
+        {(text) => <p class="text-lg text-sub">{text()}</p>}
+      </Show>
       <p class="text-sm text-sub">{statusText[props.view.status]}</p>
-      <div class="mt-2 flex flex-col items-center gap-2">
+      <div class="mt-2 flex flex-wrap justify-center gap-3">
         <Button
           variant="button"
           type="button"
-          text="Pemain berikutnya"
+          text="Main lagi"
           class="rounded-full px-8 py-3 text-lg"
-          onClick={next}
+          onClick={retrySameName}
         />
-        <p class="text-sm text-sub">
-          Otomatis berpindah dalam {left()} detik
-        </p>
+        <Button
+          variant="text"
+          type="button"
+          text="Ganti nama"
+          class="rounded-full px-6 py-3 text-lg"
+          onClick={changeName}
+        />
       </div>
     </div>
   );
@@ -125,11 +108,11 @@ function InvalidScore(props: { view: InvalidScoreView }): JSXElement {
           onClick={retrySameName}
         />
         <Button
-          variant="button"
+          variant="text"
           type="button"
-          text="Pemain berikutnya"
-          class="rounded-full px-8 py-3 text-lg"
-          onClick={nextPlayer}
+          text="Ganti nama"
+          class="rounded-full px-6 py-3 text-lg"
+          onClick={changeName}
         />
       </div>
     </div>

@@ -4,9 +4,9 @@ import { createSignal } from "solid-js";
 
 import { fetchRank, type RankInfo } from "./api";
 import { getPlayerName, setPhase } from "./phase";
-import { onScoreSent, submitScore } from "./score-queue";
+import { onScoreClosed, onScoreSent, submitScore } from "./score-queue";
 
-export type SendStatus = "sending" | "sent" | "queued" | "failed";
+export type SendStatus = "sending" | "sent" | "queued" | "closed" | "failed";
 
 export type ValidScoreView = {
   kind: "valid";
@@ -62,6 +62,9 @@ onScoreSent((id) => {
   void loadRank(id, view.name);
 });
 
+// a queued score was refused later because the session closed
+onScoreClosed((id) => updateValid(id, { status: "closed" }));
+
 /**
  * Called by finish() once the test is over. invalidReason: why Monkeytype
  * marked the test invalid (null = valid, the score is submitted).
@@ -107,6 +110,7 @@ export function reportFinishedTest(result: {
     accuracy: result.accuracy,
   }).then((outcome) => {
     if (outcome === "queued") updateValid(id, { status: "queued" });
+    else if (outcome === "closed") updateValid(id, { status: "closed" });
     else if (outcome === "rejected") updateValid(id, { status: "failed" });
   });
 }

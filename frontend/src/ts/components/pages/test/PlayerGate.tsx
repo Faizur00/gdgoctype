@@ -1,6 +1,13 @@
 // Solid's lowercase attributes (autocapitalize, spellcheck): the react rule doesn't know them
 /* oxlint-disable react/no-unknown-property */
-import { createSignal, JSXElement, onCleanup, onMount, Show } from "solid-js";
+import {
+  createSignal,
+  JSXElement,
+  onCleanup,
+  onMount,
+  Show,
+  untrack,
+} from "solid-js";
 
 import {
   codePointLength,
@@ -9,7 +16,11 @@ import {
   normalizeName,
   truncateToCodePoints,
 } from "../../../kiosk/name";
-import { confirmPlayer, isGateOpen } from "../../../kiosk/player-state";
+import {
+  confirmPlayer,
+  getPlayerName,
+  isGateOpen,
+} from "../../../kiosk/player-state";
 import { Button } from "../../common/Button";
 
 /**
@@ -27,7 +38,8 @@ export function PlayerGate(): JSXElement {
 }
 
 function GateDialog(): JSXElement {
-  const [value, setValue] = createSignal("");
+  // the name used last time on this device (empty on the first visit)
+  const [value, setValue] = createSignal(untrack(getPlayerName));
   const [error, setError] = createSignal("");
   let wrapperRef: HTMLDivElement | undefined;
   let inputRef: HTMLInputElement | undefined;
@@ -90,7 +102,7 @@ function GateDialog(): JSXElement {
             Siap adu cepat?
           </h2>
           <p class="mt-1 text-sm text-sub">
-            GDGoC Unhas · Welcoming Member · Tes 20 detik
+            GDGoC Unhas · Welcoming Member · Tes 1 menit
           </p>
         </div>
 

@@ -2,6 +2,7 @@ import { JSXElement, onCleanup, onMount, Show } from "solid-js";
 import { debounce } from "throttle-debounce";
 
 import { Config, getConfig } from "../../../config/store";
+import { startEventStatePolling } from "../../../kiosk/event-state";
 import { startQueueFlusher } from "../../../kiosk/score-queue";
 import { getCustomTextIndicator } from "../../../states/core";
 import { listenForModifierKeys } from "../../../states/modifiers";
@@ -48,6 +49,7 @@ import { TestModesNotice } from "./modes-notice/TestModesNotice";
 import { Monkey } from "./Monkey";
 import { OutOfFocusWarning } from "./OutOfFocusWarning";
 import { PlayerGate } from "./PlayerGate";
+import { SessionClosed } from "./SessionClosed";
 import { Premid } from "./Premid";
 import { TestResult } from "./result/TestResult";
 import { TestInitFailed } from "./TestInitFailed";
@@ -78,6 +80,8 @@ export function TestPage(): JSXElement {
 
     // kiosk: retry unsent scores while the test page is open (not on /leaderboard)
     signal.addEventListener("abort", startQueueFlusher(), { once: true });
+    // follow the session state the organizers set in Supabase (open, closed)
+    signal.addEventListener("abort", startEventStatePolling(), { once: true });
 
     if (
       typingTestRef === undefined ||
@@ -283,6 +287,7 @@ export function TestPage(): JSXElement {
         <TestResult />
       </Show>
       <PlayerGate />
+      <SessionClosed />
     </>
   );
 }

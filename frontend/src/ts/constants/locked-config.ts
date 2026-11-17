@@ -4,7 +4,7 @@ import { Config } from "@monkeytype/schemas/configs";
 const LOCKED_CONFIG: Partial<Config> = {
   theme: "gdgoc",
   mode: "time",
-  time: 20,
+  time: 60,
   language: "english",
   punctuation: false,
   numbers: false,
