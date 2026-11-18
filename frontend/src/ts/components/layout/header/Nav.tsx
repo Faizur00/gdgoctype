@@ -6,7 +6,7 @@ import { restartTest } from "../../../test/test-logic";
 import { cn } from "../../../utils/cn";
 import { Button } from "../../common/Button";
 
-// kiosk: leaderboard (crown), about, settings, notifications and account are hidden
+// kiosk: only essential navigation buttons (keyboard test + live leaderboard)
 export function Nav(): JSXElement {
   const buttonClass = () =>
     cn("aspect-square", {
@@ -14,7 +14,7 @@ export function Nav(): JSXElement {
     });
 
   return (
-    <nav class={cn("z-5 flex w-full items-center gap-1 md:gap-2")}>
+    <nav class="z-5 flex shrink-0 items-center gap-1 md:gap-2">
       <Button
         variant="text"
         fa={{
@@ -26,8 +26,28 @@ export function Nav(): JSXElement {
         dataset={{
           "data-nav-item": "test",
         }}
+        balloon={{
+          text: "Tes Mengetik",
+          position: "down",
+        }}
         onClick={() => {
           if (getRoutePage() === "test") void restartTest();
+        }}
+      />
+      <Button
+        variant="text"
+        fa={{
+          icon: "fa-crown",
+          fixedWidth: true,
+        }}
+        to="/leaderboard"
+        class={buttonClass()}
+        dataset={{
+          "data-nav-item": "leaderboards",
+        }}
+        balloon={{
+          text: "Leaderboard",
+          position: "down",
         }}
       />
     </nav>

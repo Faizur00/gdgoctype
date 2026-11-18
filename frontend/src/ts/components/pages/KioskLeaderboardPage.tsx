@@ -16,6 +16,7 @@ import {
   startEventStatePolling,
 } from "../../kiosk/event-state";
 import { cn } from "../../utils/cn";
+import { Button } from "../common/Button";
 
 const TOP_COUNT = 10;
 const POLL_MS = 2500;
@@ -177,6 +178,24 @@ export function KioskLeaderboardPage(): JSXElement {
 
   return (
     <div class="col-span-full mx-auto flex min-h-[calc(100vh-3rem)] w-full max-w-5xl flex-col items-center gap-8 py-8">
+      {/* the projector has no header: give the operator a way back to the test */}
+      <div class="flex w-full items-center justify-between gap-4">
+        <Button
+          to="/"
+          text="Kembali"
+          fa={{ icon: "fa-chevron-left" }}
+          class="px-4 py-2"
+        />
+        <Show when={!isSessionOpen()}>
+          <div
+            role="status"
+            class="text-white rounded-full bg-[#ea4335] px-4 py-2 text-sm shadow"
+          >
+            Sesi ditutup
+          </div>
+        </Show>
+      </div>
+
       <Show when={isOffline()}>
         <div
           role="status"
@@ -184,15 +203,6 @@ export function KioskLeaderboardPage(): JSXElement {
         >
           <span class="h-2 w-2 rounded-full bg-[#ea4335]"></span>
           offline, menampilkan data terakhir
-        </div>
-      </Show>
-
-      <Show when={!isSessionOpen()}>
-        <div
-          role="status"
-          class="fixed top-4 left-4 z-50 rounded-full bg-[#ea4335] px-4 py-2 text-sm text-white shadow"
-        >
-          Sesi ditutup
         </div>
       </Show>
 
@@ -205,28 +215,28 @@ export function KioskLeaderboardPage(): JSXElement {
       </header>
 
       <Show when={!isLeaderboardHidden()} fallback={<HiddenLeaderboard />}>
-      <Show
-        when={rows.length > 0}
-        fallback={
-          <p class="mt-8 text-2xl text-sub">
-            {hasLoaded()
-              ? "Belum ada skor. Jadilah yang pertama!"
-              : "Memuat leaderboard…"}
-          </p>
-        }
-      >
-        <ol class="flex w-full flex-col gap-3">
-          <For each={rows}>
-            {(row) => (
-              <Row
-                row={row}
-                highlighted={highlighted().has(row.name_key)}
-                register={registerRow}
-              />
-            )}
-          </For>
-        </ol>
-      </Show>
+        <Show
+          when={rows.length > 0}
+          fallback={
+            <p class="mt-8 text-2xl text-sub">
+              {hasLoaded()
+                ? "Belum ada skor. Jadilah yang pertama!"
+                : "Memuat leaderboard…"}
+            </p>
+          }
+        >
+          <ol class="flex w-full flex-col gap-3">
+            <For each={rows}>
+              {(row) => (
+                <Row
+                  row={row}
+                  highlighted={highlighted().has(row.name_key)}
+                  register={registerRow}
+                />
+              )}
+            </For>
+          </ol>
+        </Show>
       </Show>
 
       <Show when={!isLeaderboardHidden() && updatedAt()}>

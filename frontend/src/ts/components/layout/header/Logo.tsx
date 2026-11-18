@@ -10,12 +10,8 @@ export function Logo(): JSXElement {
   return (
     <Link
       to="/"
-      class="group/logo -m-2 flex w-max flex-col gap-1 rounded-[0.8rem] p-2"
+      class="group/logo -m-2 flex shrink-0 box-content flex-col gap-0.5 rounded-[0.8rem] p-2"
       aria-label="GDGoC Type Home"
-      style={{
-        "box-sizing": "content-box",
-        "font-family": "Outfit, sans-serif",
-      }}
       data-ui-element="logo"
       onClick={() => {
         if (getRoutePage() === "test") void restartTest();
@@ -31,7 +27,7 @@ export function Logo(): JSXElement {
         />
         <h1
           class={cn(
-            "hidden text-[1.75rem] leading-none text-text transition-colors duration-250 sm:block",
+            "hidden text-[1.75rem] font-bold leading-none text-text transition-colors duration-250 whitespace-nowrap sm:block",
             {
               "text-sub": isFocusMode(),
             },
@@ -43,7 +39,7 @@ export function Logo(): JSXElement {
       </div>
       <div
         class={cn(
-          "hidden max-w-[11rem] text-[0.65rem] leading-tight text-sub transition-colors duration-125 group-focus-visible/logo:text-transparent md:block",
+          "hidden text-[0.68rem] leading-tight text-sub transition-colors duration-125 whitespace-nowrap group-focus-visible/logo:text-transparent sm:block",
           {
             "text-transparent": isFocusMode(),
           },
