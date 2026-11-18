@@ -1,4 +1,6 @@
 import {
+  createEffect,
+  createMemo,
   createSignal,
   For,
   JSXElement,
@@ -86,6 +88,8 @@ export function KioskLeaderboardPage(): JSXElement {
       );
     }
   };
+
+  const topKey = createMemo(() => rows[0]?.name_key ?? "");
 
   const highlightTimers = new Set<ReturnType<typeof setTimeout>>();
 
@@ -225,17 +229,26 @@ export function KioskLeaderboardPage(): JSXElement {
             </p>
           }
         >
-          <ol class="flex w-full flex-col gap-3">
-            <For each={rows}>
-              {(row) => (
-                <Row
-                  row={row}
-                  highlighted={highlighted().has(row.name_key)}
-                  register={registerRow}
-                />
-              )}
-            </For>
-          </ol>
+          <>
+            <Podium
+              rows={rows.slice(0, 3)}
+              highlighted={highlighted()}
+              topKey={topKey()}
+            />
+            <Show when={rows.length > 3}>
+              <ol class="mt-6 flex w-full flex-col gap-3">
+                <For each={rows.slice(3)}>
+                  {(row) => (
+                    <Row
+                      row={row}
+                      highlighted={highlighted().has(row.name_key)}
+                      register={registerRow}
+                    />
+                  )}
+                </For>
+              </ol>
+            </Show>
+          </>
         </Show>
       </Show>
 
@@ -255,6 +268,125 @@ function HiddenLeaderboard(): JSXElement {
     <div class="mt-8 flex flex-col items-center gap-4 text-center">
       <p class="text-6xl text-text">Leaderboard Hidden</p>
       <p class="text-2xl text-sub">Skor disembunyikan sampai pengumuman.</p>
+    </div>
+  );
+}
+
+const MEDALS = ["🥇", "🥈", "🥉"];
+// display order: 2nd (index 1), 1st (index 0), 3rd (index 2)
+const PODIUM_ORDER = [1, 0, 2];
+const PODIUM_BASE_H = ["h-16", "h-24", "h-12"];
+const PODIUM_BASE_BG = [
+  "bg-[#4285f4]",
+  "bg-[#fbbc04]",
+  "bg-[#34a853]",
+];
+// stagger: left=0ms, right=150ms, center=300ms (most dramatic last)
+const PODIUM_STAGGER_MS = [0, 300, 150];
+
+function PodiumSlot(props: {
+  row: LeaderboardRow;
+  highlighted: boolean;
+  /** position in display (0=left/2nd, 1=center/1st, 2=right/3rd) */
+  displayIndex: number;
+  topKey: string;
+}): JSXElement {
+  const rank = (): number => props.row.peringkat; // 1, 2, or 3
+  const rankIdx = (): number => rank() - 1; // 0, 1, 2
+
+  let cardEl: HTMLElement | undefined;
+
+  const runAnimate = (el: HTMLElement, delay: number): void => {
+    if (prefersReducedMotion()) return;
+    el.animate(
+      [
+        { opacity: "0", transform: "translateY(80px)" },
+        { opacity: "1", transform: "none" },
+      ],
+      {
+        duration: 700,
+        delay,
+        easing: "cubic-bezier(0.2, 0.8, 0.2, 1)",
+        fill: "both",
+      },
+    );
+  };
+
+  // re-trigger raise on the #1 slot whenever the leader changes
+  let mounted = false;
+  createEffect(() => {
+    const _key = props.topKey; // subscribe to topKey changes
+    if (!mounted) {
+      mounted = true;
+      return; // skip initial run; mount ref callback handles the first animation
+    }
+    if (rank() !== 1 || !cardEl) return;
+    runAnimate(cardEl, 0);
+  });
+
+  return (
+    <div
+      class="flex flex-col items-center gap-0"
+      style={{ flex: "1 1 0", "min-width": "0" }}
+    >
+      {/* card above the base */}
+      <div
+        ref={(el) => {
+          cardEl = el;
+          runAnimate(el, PODIUM_STAGGER_MS[props.displayIndex]);
+        }}
+        class={cn(
+          "flex w-full flex-col items-center gap-1 rounded-2xl bg-sub-alt px-3 py-4 transition-[background-color,box-shadow] duration-700",
+          { "bg-main/15 ring-4 ring-main": props.highlighted },
+        )}
+      >
+        <span
+          class={cn(rank() === 1 ? "text-5xl" : "text-4xl")}
+          aria-label={`Peringkat ${rank()}`}
+        >
+          {MEDALS[rankIdx()]}
+        </span>
+        <span class="max-w-full truncate text-center text-lg font-medium text-text">
+          {props.row.name}
+        </span>
+        <span class={cn("font-mono text-main", rank() === 1 ? "text-3xl" : "text-2xl")}>
+          {props.row.wpm.toFixed(2)}
+        </span>
+        <span class="text-sm text-sub">{props.row.accuracy.toFixed(1)}%</span>
+      </div>
+      {/* podium base */}
+      <div
+        class={cn(
+          "w-full rounded-t-lg",
+          PODIUM_BASE_H[props.displayIndex],
+          PODIUM_BASE_BG[props.displayIndex],
+        )}
+      />
+    </div>
+  );
+}
+
+function Podium(props: {
+  rows: LeaderboardRow[];
+  highlighted: ReadonlySet<string>;
+  topKey: string;
+}): JSXElement {
+  return (
+    <div class="flex w-full items-end justify-center gap-3">
+      <For each={PODIUM_ORDER}>
+        {(rowIdx, displayIndex) => (
+          <Show when={props.rows[rowIdx]}>
+            {(row) => (
+              <PodiumSlot
+                row={row()}
+                highlighted={props.highlighted.has(row().name_key)}
+                displayIndex={displayIndex()}
+                topKey={props.topKey}
+              />
+            )}
+          </Show>
+        )}
+      </For>
     </div>
   );
 }
