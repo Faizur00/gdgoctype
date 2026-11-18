@@ -230,11 +230,7 @@ export function KioskLeaderboardPage(): JSXElement {
           }
         >
           <>
-            <Podium
-              rows={rows}
-              highlighted={highlighted()}
-              topKey={topKey()}
-            />
+            <Podium rows={rows} highlighted={highlighted()} topKey={topKey()} />
             <Show when={rows.length > 3}>
               <ol class="mt-6 flex w-full flex-col gap-3">
                 <For each={rows.slice(3)}>
@@ -273,7 +269,7 @@ function HiddenLeaderboard(): JSXElement {
 }
 
 const MEDALS = ["🥇", "🥈", "🥉"];
-const PODIUM_BASE_H = ["h-16", "h-24", "h-12"] as const;
+const PODIUM_BASE_H = ["h-24", "h-32", "h-20"] as const;
 const PODIUM_BASE_BG = [
   "bg-[#4285f4]",
   "bg-[#fbbc04]",
@@ -316,22 +312,28 @@ function PodiumSlot(props: {
     const _key = props.topKey; // subscribe to topKey changes
     if (!mounted) {
       mounted = true;
-      return; // skip initial run; ref callback handles mount animation
+      return; // skip initial run; onMount handles the first animation
     }
     if (rank() !== 1 || !cardEl) return;
     runAnimate(cardEl, 0);
+  });
+
+  // The entrance animation must start after the element is connected: ref
+  // callbacks run before insertion, and an animation created on a
+  // template-cloned node keeps its inactive document timeline and never plays.
+  onMount(() => {
+    if (cardEl !== undefined) {
+      runAnimate(cardEl, PODIUM_STAGGER_MS[props.displayIndex]);
+    }
   });
 
   return (
     <div class="flex min-w-0 flex-1 flex-col items-stretch gap-0">
       {/* card above the base */}
       <div
-        ref={(el) => {
-          cardEl = el;
-          runAnimate(el, PODIUM_STAGGER_MS[props.displayIndex]);
-        }}
+        ref={(el) => (cardEl = el)}
         class={cn(
-          "flex w-full flex-col items-center gap-1 rounded-2xl bg-sub-alt px-3 py-4 transition-[background-color,box-shadow] duration-700",
+          "flex w-full flex-col items-center gap-1 rounded-2xl px-3 py-4 transition-[background-color,box-shadow] duration-700",
           { "bg-main/15 ring-4 ring-main": props.highlighted },
         )}
       >
@@ -341,7 +343,7 @@ function PodiumSlot(props: {
         >
           {MEDALS[rankIdx()]}
         </span>
-        <span class="w-full overflow-hidden text-ellipsis whitespace-nowrap text-center text-lg font-medium text-text">
+        <span class="w-full overflow-hidden text-center text-lg font-medium text-ellipsis whitespace-nowrap text-text">
           {props.row.name}
         </span>
         <span
@@ -361,7 +363,7 @@ function PodiumSlot(props: {
           PODIUM_BASE_H[props.displayIndex],
           PODIUM_BASE_BG[props.displayIndex],
         )}
-      />
+      ></div>
     </div>
   );
 }

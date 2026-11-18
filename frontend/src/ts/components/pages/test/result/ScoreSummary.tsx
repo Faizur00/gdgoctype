@@ -42,11 +42,7 @@ export function ScoreSummary(): JSXElement {
 function ValidScore(props: { view: ValidScoreView }): JSXElement {
   const rankText = (): string => {
     // the organizers hide the standings near the end: don't leak the rank
-    if (isLeaderboardHidden()) return "Peringkat disembunyikan";
-    const { rank, rankLoading, status } = props.view;
-    if (rank !== null) return `Peringkat #${rank.peringkat} dari ${rank.total}`;
-    if (rankLoading || status === "sending") return "Peringkat…";
-    return "Peringkat —";
+    return "Peringkat nya liat diatas aja bg";
   };
 
   const bestText = (): string | undefined => {
@@ -64,9 +60,7 @@ function ValidScore(props: { view: ValidScoreView }): JSXElement {
         <span class="text-8xl text-main">{Math.round(props.view.wpm)}</span>
         <span class="ml-2 text-xl text-sub">poin (WPM)</span>
       </div>
-      <p class="text-xl text-text">
-        Akurasi {props.view.accuracy.toFixed(1)}%
-      </p>
+      <p class="text-xl text-text">Akurasi {props.view.accuracy.toFixed(1)}%</p>
       <p class="text-2xl text-text">{rankText()}</p>
       <Show when={bestText()}>
         {(text) => <p class="text-lg text-sub">{text()}</p>}
