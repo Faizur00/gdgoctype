@@ -231,7 +231,7 @@ export function KioskLeaderboardPage(): JSXElement {
         >
           <>
             <Podium
-              rows={rows.slice(0, 3)}
+              rows={rows}
               highlighted={highlighted()}
               topKey={topKey()}
             />
@@ -273,22 +273,20 @@ function HiddenLeaderboard(): JSXElement {
 }
 
 const MEDALS = ["🥇", "🥈", "🥉"];
-// display order: 2nd (index 1), 1st (index 0), 3rd (index 2)
-const PODIUM_ORDER = [1, 0, 2];
-const PODIUM_BASE_H = ["h-16", "h-24", "h-12"];
+const PODIUM_BASE_H = ["h-16", "h-24", "h-12"] as const;
 const PODIUM_BASE_BG = [
   "bg-[#4285f4]",
   "bg-[#fbbc04]",
   "bg-[#34a853]",
-];
+] as const;
 // stagger: left=0ms, right=150ms, center=300ms (most dramatic last)
-const PODIUM_STAGGER_MS = [0, 300, 150];
+const PODIUM_STAGGER_MS = [0, 300, 150] as const;
 
 function PodiumSlot(props: {
   row: LeaderboardRow;
   highlighted: boolean;
   /** position in display (0=left/2nd, 1=center/1st, 2=right/3rd) */
-  displayIndex: number;
+  displayIndex: 0 | 1 | 2;
   topKey: string;
 }): JSXElement {
   const rank = (): number => props.row.peringkat; // 1, 2, or 3
@@ -318,17 +316,14 @@ function PodiumSlot(props: {
     const _key = props.topKey; // subscribe to topKey changes
     if (!mounted) {
       mounted = true;
-      return; // skip initial run; mount ref callback handles the first animation
+      return; // skip initial run; ref callback handles mount animation
     }
     if (rank() !== 1 || !cardEl) return;
     runAnimate(cardEl, 0);
   });
 
   return (
-    <div
-      class="flex flex-col items-center gap-0"
-      style={{ flex: "1 1 0", "min-width": "0" }}
-    >
+    <div class="flex min-w-0 flex-1 flex-col items-stretch gap-0">
       {/* card above the base */}
       <div
         ref={(el) => {
@@ -341,15 +336,20 @@ function PodiumSlot(props: {
         )}
       >
         <span
-          class={cn(rank() === 1 ? "text-5xl" : "text-4xl")}
+          class={rank() === 1 ? "text-5xl" : "text-4xl"}
           aria-label={`Peringkat ${rank()}`}
         >
           {MEDALS[rankIdx()]}
         </span>
-        <span class="max-w-full truncate text-center text-lg font-medium text-text">
+        <span class="w-full overflow-hidden text-ellipsis whitespace-nowrap text-center text-lg font-medium text-text">
           {props.row.name}
         </span>
-        <span class={cn("font-mono text-main", rank() === 1 ? "text-3xl" : "text-2xl")}>
+        <span
+          class={cn(
+            "font-mono text-main",
+            rank() === 1 ? "text-3xl" : "text-2xl",
+          )}
+        >
           {props.row.wpm.toFixed(2)}
         </span>
         <span class="text-sm text-sub">{props.row.accuracy.toFixed(1)}%</span>
@@ -366,27 +366,31 @@ function PodiumSlot(props: {
   );
 }
 
+/** Renders up to 3 rows as an Olympic podium: 2nd | 1st | 3rd. */
 function Podium(props: {
   rows: LeaderboardRow[];
   highlighted: ReadonlySet<string>;
   topKey: string;
 }): JSXElement {
+  // Direct indexing avoids SolidJS For+static-array reactivity quirks
+  const slot = (rankIndex: number, displayIndex: 0 | 1 | 2) => (
+    <Show when={props.rows[rankIndex]}>
+      {(row) => (
+        <PodiumSlot
+          row={row()}
+          highlighted={props.highlighted.has(row().name_key)}
+          displayIndex={displayIndex}
+          topKey={props.topKey}
+        />
+      )}
+    </Show>
+  );
+
   return (
     <div class="flex w-full items-end justify-center gap-3">
-      <For each={PODIUM_ORDER}>
-        {(rowIdx, displayIndex) => (
-          <Show when={props.rows[rowIdx]}>
-            {(row) => (
-              <PodiumSlot
-                row={row()}
-                highlighted={props.highlighted.has(row().name_key)}
-                displayIndex={displayIndex()}
-                topKey={props.topKey}
-              />
-            )}
-          </Show>
-        )}
-      </For>
+      {slot(1, 0)}
+      {slot(0, 1)}
+      {slot(2, 2)}
     </div>
   );
 }
