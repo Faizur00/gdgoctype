@@ -10,6 +10,7 @@ import {
   setPlayerBase,
   setPlayerName,
 } from "./phase";
+import { resetLastNotifiedName } from "./score-flow";
 
 export { getPhase, getPlayerBase, getPlayerName, isGateOpen, setPhase };
 export type { PlayerPhase } from "./phase";
@@ -34,6 +35,7 @@ export async function confirmPlayer(rawName: string): Promise<boolean> {
     if (currentBase !== name) {
       setPlayerBase(name);
       setPlayerName("");
+      resetLastNotifiedName();
     } else {
       setPlayerBase(name);
     }
@@ -50,6 +52,7 @@ export async function confirmPlayer(rawName: string): Promise<boolean> {
 export function changeName(): void {
   setPlayerBase("");
   setPlayerName("");
+  resetLastNotifiedName();
   setPhase("gate");
   void restartTest();
 }

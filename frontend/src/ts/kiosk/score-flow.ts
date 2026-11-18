@@ -2,6 +2,7 @@
 // Leaf module: it must not import test-logic (test-logic calls reportFinishedTest).
 import { createSignal } from "solid-js";
 
+import { showNoticeNotification } from "../states/notifications";
 import { fetchRank, type RankInfo } from "./api";
 import { getPlayerBase, getPlayerName, setPhase } from "./phase";
 import {
@@ -36,6 +37,12 @@ const [getScoreView, setScoreView] = createSignal<ScoreView | null>(null);
 
 export { getScoreView };
 
+let lastNotifiedName = "";
+
+export function resetLastNotifiedName(): void {
+  lastNotifiedName = "";
+}
+
 function updateValid(
   id: string,
   patch: Partial<Omit<ValidScoreView, "kind" | "id">>,
@@ -64,6 +71,23 @@ onScoreResolved((id, assignedName) => {
   const view = getScoreView();
   if (view?.kind === "valid" && view.id === id) {
     updateValid(id, { name: assignedName });
+  }
+
+  const base = getPlayerBase();
+  if (
+    base !== "" &&
+    assignedName !== base &&
+    lastNotifiedName !== assignedName
+  ) {
+    lastNotifiedName = assignedName;
+    showNoticeNotification(
+      `Nama "${base}" sudah dipakai peserta lain. Namamu disesuaikan menjadi "${assignedName}".`,
+      {
+        customTitle: "Nama Disesuaikan",
+        customIcon: "user-tag",
+        durationMs: 6000,
+      },
+    );
   }
 });
 
