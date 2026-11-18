@@ -3,20 +3,25 @@ import { focusWords } from "../test/test-ui";
 import { isValidName, normalizeName } from "./name";
 import {
   getPhase,
+  getPlayerBase,
   getPlayerName,
   isGateOpen,
   setPhase,
+  setPlayerBase,
   setPlayerName,
 } from "./phase";
 
-export { getPhase, getPlayerName, isGateOpen, setPhase };
+export { getPhase, getPlayerBase, getPlayerName, isGateOpen, setPhase };
 export type { PlayerPhase } from "./phase";
 
 let confirming = false;
 
 /**
- * Gate confirmed: stores the (normalized) name, opens the test and focuses
+ * Gate confirmed: stores the (normalized) base name, opens the test and focuses
  * the words, so the first key starts the test. false if the name is invalid.
+ * If the base name is unchanged and an assigned name exists on this device,
+ * the assigned name is kept. If the base name changes, assigned name is cleared
+ * so the next insert resolves a fresh suffix.
  */
 export async function confirmPlayer(rawName: string): Promise<boolean> {
   const name = normalizeName(rawName);
@@ -25,7 +30,13 @@ export async function confirmPlayer(rawName: string): Promise<boolean> {
 
   confirming = true;
   try {
-    setPlayerName(name);
+    const currentBase = getPlayerBase();
+    if (currentBase !== name) {
+      setPlayerBase(name);
+      setPlayerName("");
+    } else {
+      setPlayerBase(name);
+    }
     setPhase("playing");
     await restartTest({ noAnim: true });
     focusWords();
@@ -37,6 +48,7 @@ export async function confirmPlayer(rawName: string): Promise<boolean> {
 
 /** Change the name: back to the name gate with an empty name and a fresh test. */
 export function changeName(): void {
+  setPlayerBase("");
   setPlayerName("");
   setPhase("gate");
   void restartTest();

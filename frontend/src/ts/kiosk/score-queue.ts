@@ -1,4 +1,11 @@
-import { insertScore, type ScoreInput } from "./api";
+import {
+  fetchMatchingNameKeys,
+  insertScore,
+  type ScoreInput,
+  waitRandomJitter,
+} from "./api";
+import { pickSmallestFreeName } from "./name";
+import { getPlayerBase, getPlayerName, setPlayerName } from "./phase";
 
 const STORAGE_KEY = "gdgoc.scoreQueue.v1";
 const MAX_QUEUE = 200;
@@ -6,7 +13,10 @@ const FLUSH_INTERVAL_MS = 15_000;
 
 export type SendOutcome = "sent" | "queued" | "closed" | "rejected";
 
-type QueuedScore = ScoreInput & { queuedAt: number };
+export type QueuedScore = ScoreInput & {
+  queuedAt: number;
+  baseName?: string;
+};
 
 function isQueuedScore(value: unknown): value is QueuedScore {
   if (typeof value !== "object" || value === null) return false;
@@ -16,7 +26,8 @@ function isQueuedScore(value: unknown): value is QueuedScore {
     typeof item["name"] === "string" &&
     typeof item["wpm"] === "number" &&
     typeof item["accuracy"] === "number" &&
-    typeof item["queuedAt"] === "number"
+    typeof item["queuedAt"] === "number" &&
+    (item["baseName"] === undefined || typeof item["baseName"] === "string")
   );
 }
 
@@ -43,11 +54,11 @@ function persist(): void {
   }
 }
 
-function enqueue(score: ScoreInput): QueuedScore {
+function enqueue(score: ScoreInput, baseName?: string): QueuedScore {
   const existing = queue.find((item) => item.id === score.id);
   if (existing !== undefined) return existing;
 
-  const item: QueuedScore = { ...score, queuedAt: Date.now() };
+  const item: QueuedScore = { ...score, baseName, queuedAt: Date.now() };
   queue.push(item);
   if (queue.length > MAX_QUEUE) {
     console.warn("Score queue full, dropping the oldest score");
@@ -70,6 +81,16 @@ export function onScoreSent(listener: (id: string) => void): () => void {
   return () => sentListeners.delete(listener);
 }
 
+const resolvedListeners = new Set<(id: string, assignedName: string) => void>();
+
+/** Called when a queued score has its assigned name resolved. Returns the unsubscribe. */
+export function onScoreResolved(
+  listener: (id: string, assignedName: string) => void,
+): () => void {
+  resolvedListeners.add(listener);
+  return () => resolvedListeners.delete(listener);
+}
+
 const closedListeners = new Set<(id: string) => void>();
 
 /** Called when the database refused a queued score because the session is closed. */
@@ -85,9 +106,43 @@ async function send(item: QueuedScore): Promise<SendOutcome> {
   if (running !== undefined) return running;
 
   const promise = (async (): Promise<SendOutcome> => {
-    const result = await insertScore(item);
+    let nameToSend = item.name;
+
+    const storedAssigned = getPlayerName();
+    if (storedAssigned !== "") {
+      nameToSend = storedAssigned;
+      if (item.name !== nameToSend) {
+        item.name = nameToSend;
+        persist();
+      }
+    } else {
+      // First test for this device and base: resolve smallest free base (n)
+      const base = item.baseName ?? getPlayerBase() ?? item.name;
+      try {
+        const existingKeys = await fetchMatchingNameKeys(base);
+        nameToSend = pickSmallestFreeName(base, existingKeys);
+        await waitRandomJitter(100, 400);
+        item.name = nameToSend;
+        persist();
+      } catch {
+        // Network error during lookup: cannot resolve or send now, remain queued
+        return "queued";
+      }
+    }
+
+    const result = await insertScore({
+      id: item.id,
+      name: nameToSend,
+      wpm: item.wpm,
+      accuracy: item.accuracy,
+    });
+
     if (result === "ok") {
       remove(item.id);
+      if (getPlayerName() === "") {
+        setPlayerName(nameToSend);
+      }
+      for (const listener of resolvedListeners) listener(item.id, nameToSend);
       for (const listener of sentListeners) listener(item.id);
       return "sent";
     }
@@ -113,8 +168,11 @@ async function send(item: QueuedScore): Promise<SendOutcome> {
  * Saves the score to the queue first (so a closed tab or a crash can't lose
  * it), then tries to send it. "queued" = will be retried by the flusher.
  */
-export async function submitScore(score: ScoreInput): Promise<SendOutcome> {
-  return send(enqueue(score));
+export async function submitScore(
+  score: ScoreInput,
+  baseName?: string,
+): Promise<SendOutcome> {
+  return send(enqueue(score, baseName));
 }
 
 let flushing = false;

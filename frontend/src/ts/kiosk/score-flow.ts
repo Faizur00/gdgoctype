@@ -3,8 +3,13 @@
 import { createSignal } from "solid-js";
 
 import { fetchRank, type RankInfo } from "./api";
-import { getPlayerName, setPhase } from "./phase";
-import { onScoreClosed, onScoreSent, submitScore } from "./score-queue";
+import { getPlayerBase, getPlayerName, setPhase } from "./phase";
+import {
+  onScoreClosed,
+  onScoreResolved,
+  onScoreSent,
+  submitScore,
+} from "./score-queue";
 
 export type SendStatus = "sending" | "sent" | "queued" | "closed" | "failed";
 
@@ -54,6 +59,14 @@ async function loadRank(id: string, name: string): Promise<void> {
   updateValid(id, { rank, rankLoading: false });
 }
 
+// when an assigned name is resolved (eg. first test or on offline queue flush)
+onScoreResolved((id, assignedName) => {
+  const view = getScoreView();
+  if (view?.kind === "valid" && view.id === id) {
+    updateValid(id, { name: assignedName });
+  }
+});
+
 // a score is confirmed stored (right away, or later by the offline queue)
 onScoreSent((id) => {
   const view = getScoreView();
@@ -74,17 +87,19 @@ export function reportFinishedTest(result: {
   accuracy: number;
   invalidReason: string | null;
 }): void {
-  const name = getPlayerName();
+  const base = getPlayerBase();
+  const assigned = getPlayerName();
+  const nameToUse = assigned !== "" ? assigned : base;
   setPhase("result");
 
   if (result.invalidReason !== null) {
-    setScoreView({ kind: "invalid", name, reason: result.invalidReason });
+    setScoreView({ kind: "invalid", name: nameToUse, reason: result.invalidReason });
     return;
   }
-  if (name === "") {
+  if (nameToUse === "") {
     setScoreView({
       kind: "invalid",
-      name,
+      name: nameToUse,
       reason: "nama pemain belum diisi",
     });
     return;
@@ -94,7 +109,7 @@ export function reportFinishedTest(result: {
   setScoreView({
     kind: "valid",
     id,
-    name,
+    name: nameToUse,
     wpm: result.wpm,
     accuracy: result.accuracy,
     status: "sending",
@@ -102,13 +117,16 @@ export function reportFinishedTest(result: {
     rankLoading: false,
   });
 
-  // "sent" is handled by onScoreSent above (it also covers retries later)
-  void submitScore({
-    id,
-    name,
-    wpm: result.wpm,
-    accuracy: result.accuracy,
-  }).then((outcome) => {
+  // "sent" and "resolved" are handled by the listeners above
+  void submitScore(
+    {
+      id,
+      name: nameToUse,
+      wpm: result.wpm,
+      accuracy: result.accuracy,
+    },
+    base,
+  ).then((outcome) => {
     if (outcome === "queued") updateValid(id, { status: "queued" });
     else if (outcome === "closed") updateValid(id, { status: "closed" });
     else if (outcome === "rejected") updateValid(id, { status: "failed" });

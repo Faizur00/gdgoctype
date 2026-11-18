@@ -25,7 +25,7 @@ URL layar proyektor: `https://gdgoc-unhas-type.netlify.app/leaderboard`
 | Selama sesi (5-10 mnt) | Leaderboard sementara tampil di proyektor | (tidak ada) |
 | **Sisa 1 menit** | Sembunyikan leaderboard ("makin deg-degan") | `update public.event_state set leaderboard_hidden = true;` |
 | **Waktu habis** | Kunci web. Tes yang sedang berjalan tidak tersimpan | `update public.event_state set open = false;` |
-| Periksa | Jalankan pengecekan curang (`docs/sql/002_anticheat.sql`), verifikasi juara | |
+| Periksa | Jalankan pengecekan curang & tabrakan nama (`docs/sql/002_anticheat.sql`), verifikasi juara | |
 | **Umumkan** | Tampilkan leaderboard akhir | `update public.event_state set leaderboard_hidden = false;` |
 
 Opsional: penutupan otomatis. Isi `ends_at` supaya database menolak skor sendiri saat waktunya lewat:
@@ -40,6 +40,7 @@ update public.event_state set ends_at = now() + interval '10 minutes';
 |---|---|
 | Peserta bilang skor tidak masuk | Cek `open = true` dan `ends_at` kosong/belum lewat. Cek Wi-Fi. Skor yang tertunda tersimpan di perangkat dan terkirim sendiri saat online. |
 | Leaderboard kosong padahal ada skor | Cek `leaderboard_hidden = false`. Hard refresh layar proyektor. |
+| Dua pemain bentrok nomor nama sama | Jalankan query `select lower(trim(name)) as name_key, count(*), array_agg(id) from public.scores group by 1 having count(*) > 1;` di `docs/sql/002_anticheat.sql`. Hapus skor yang lebih rendah dari pasangan tersebut. |
 | Ada skor aneh (WPM tinggi) | `docs/sql/002_anticheat.sql`, lalu minta orangnya main ulang di depan panitia. Hapus: `delete from public.scores where lower(trim(name)) = 'nama-key';` |
 | Situs tidak bisa dibuka | Cek status Netlify. Cadangan: unggah ulang folder `frontend/dist` (lihat `docs/GDGOC_KIOSK.md`). |
 | Salah tutup sesi | `update public.event_state set open = true;` |

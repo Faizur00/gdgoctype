@@ -28,5 +28,13 @@ group by 1
 having count(*) > 30
 order by jumlah desc;
 
--- 4) hapus satu nama yang terbukti curang (ganti 'nama-key' dengan huruf kecil)
+-- 4) tabrakan nomor suffix (dua perangkat menabrak name_key yang sama)
+--    Cek apakah ada name_key kembar yang berasal dari orang berbeda:
+select lower(trim(name)) as name_key, count(*), array_agg(id)
+from public.scores
+group by 1 having count(*) > 1;
+-- Jika terjadi tabrakan antara 2 pemain berbeda, hapus skor yang lebih rendah dari pasangan tersebut:
+-- delete from public.scores where id = 'id_skor_terendah';
+
+-- 5) hapus satu nama yang terbukti curang (ganti 'nama-key' dengan huruf kecil)
 -- delete from public.scores where lower(trim(name)) = 'nama-key';

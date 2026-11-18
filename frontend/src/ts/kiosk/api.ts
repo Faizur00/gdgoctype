@@ -203,6 +203,42 @@ export async function fetchTop(
 }
 
 /**
+ * Reads existing name_key values on public.leaderboard starting with base.
+ * e.g. GET /leaderboard?select=name_key&name_key=like.<baseKey>*
+ */
+export async function fetchMatchingNameKeys(
+  base: string,
+  signal?: AbortSignal,
+): Promise<string[]> {
+  const key = encodeURIComponent(nameKey(base));
+  const response = await request(
+    `/leaderboard?select=name_key&name_key=like.${key}*`,
+    { signal },
+  );
+  if (!response.ok) throw new Error(`lookup ${response.status}`);
+  const data: unknown = await response.json();
+  if (!Array.isArray(data)) throw new Error("lookup: unexpected body");
+  return data
+    .map((item) => {
+      if (
+        typeof item === "object" &&
+        item !== null &&
+        typeof (item as Record<string, unknown>)["name_key"] === "string"
+      ) {
+        return (item as Record<string, unknown>)["name_key"] as string;
+      }
+      return null;
+    })
+    .filter((k): k is string => k !== null);
+}
+
+/** 100-400 ms random delay to spread simultaneous lookups and inserts */
+export async function waitRandomJitter(min = 100, max = 400): Promise<void> {
+  const ms = min + Math.floor(Math.random() * (max - min + 1));
+  await new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
  * Rank of `name` (best score per name) and the number of rows in the view.
  * null if the name isn't in the view. Throws on network errors.
  */

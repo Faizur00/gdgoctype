@@ -18,6 +18,7 @@ import {
 } from "../../../kiosk/name";
 import {
   confirmPlayer,
+  getPlayerBase,
   getPlayerName,
   isGateOpen,
 } from "../../../kiosk/player-state";
@@ -38,8 +39,10 @@ export function PlayerGate(): JSXElement {
 }
 
 function GateDialog(): JSXElement {
-  // the name used last time on this device (empty on the first visit)
-  const [value, setValue] = createSignal(untrack(getPlayerName));
+  // the base name used last time on this device (empty on the first visit)
+  const [value, setValue] = createSignal(
+    untrack(getPlayerBase) || untrack(getPlayerName),
+  );
   const [error, setError] = createSignal("");
   let wrapperRef: HTMLDivElement | undefined;
   let inputRef: HTMLInputElement | undefined;
