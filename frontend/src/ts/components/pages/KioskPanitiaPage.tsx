@@ -3,9 +3,11 @@
 import {
   createSignal,
   JSXElement,
+  Match,
   onCleanup,
   onMount,
   Show,
+  Switch,
   untrack,
 } from "solid-js";
 
@@ -64,7 +66,6 @@ function resultText(result: string): string {
 // big colored buttons: override the themable button colors
 const bigButtonClass =
   "w-full rounded-2xl px-6 py-5 text-xl [--themable-button-hover-bg:var(--text-color)] [--themable-button-hover-text:var(--bg-color)] [--themable-button-text:#ffffff]";
-const blueClass = "[--themable-button-bg:#4285f4]";
 const redClass = "[--themable-button-bg:#ea4335]";
 const greenClass = "[--themable-button-bg:#34a853]";
 
@@ -273,74 +274,80 @@ function ActionScreen(props: {
         )}
       </Show>
 
-      <Button
-        variant="button"
-        type="button"
-        text="Tampilkan leaderboard (sesi coba)"
-        disabled={busy()}
-        class={cn(bigButtonClass, blueClass)}
-        onClick={() => void run("show", "Leaderboard ditampilkan.")}
-      />
-
-      <Show
-        when={confirmOfficial()}
-        fallback={
+      {/* one button at a time, picked from the current state: no state yet
+      means no button (never guess which action is safe) */}
+      <Switch fallback={<p class="text-center text-sub">Memuat status…</p>}>
+        <Match when={getEventState()?.leaderboardHidden === false}>
+          <p class="text-center text-sm text-sub">
+            Sesi coba sedang berjalan. Tekan saat tes resmi akan dimulai.
+          </p>
+          <Show
+            when={confirmOfficial()}
+            fallback={
+              <Button
+                variant="button"
+                type="button"
+                text="Tutup & mulai tes resmi"
+                disabled={busy()}
+                class={cn(bigButtonClass, redClass)}
+                onClick={() => {
+                  setMessage(null);
+                  setConfirmOfficial(true);
+                }}
+              />
+            }
+          >
+            <div
+              role="alertdialog"
+              aria-labelledby="officialConfirmText"
+              class="flex flex-col gap-4 rounded-2xl bg-sub-alt p-4 ring-2 ring-error"
+            >
+              <p id="officialConfirmText" class="text-center text-lg text-text">
+                Ini akan MENGHAPUS semua skor latihan dan menyembunyikan
+                leaderboard. Lanjutkan?
+              </p>
+              <div class="flex gap-3">
+                <Button
+                  variant="button"
+                  type="button"
+                  text={busy() ? "Memproses…" : "Ya, hapus & mulai"}
+                  disabled={busy()}
+                  class={cn(bigButtonClass, redClass, "flex-1 py-4 text-lg")}
+                  onClick={() =>
+                    void run(
+                      "start_official",
+                      "Skor latihan dihapus dan leaderboard disembunyikan. Tes resmi dimulai.",
+                    )
+                  }
+                />
+                <Button
+                  variant="button"
+                  type="button"
+                  text="Batal"
+                  disabled={busy()}
+                  class="flex-1 rounded-2xl py-4 text-lg"
+                  onClick={() => setConfirmOfficial(false)}
+                />
+              </div>
+            </div>
+          </Show>
+        </Match>
+        <Match when={getEventState()?.leaderboardHidden === true}>
+          <p class="text-center text-sm text-sub">
+            Tes resmi sedang berjalan. Leaderboard disembunyikan.
+          </p>
           <Button
             variant="button"
             type="button"
-            text="Mulai tes resmi"
+            text="Buka & umumkan hasil"
             disabled={busy()}
-            class={cn(bigButtonClass, redClass)}
-            onClick={() => {
-              setMessage(null);
-              setConfirmOfficial(true);
-            }}
+            class={cn(bigButtonClass, greenClass)}
+            onClick={() =>
+              void run("show", "Hasil diumumkan, leaderboard tampil.")
+            }
           />
-        }
-      >
-        <div
-          role="alertdialog"
-          aria-labelledby="officialConfirmText"
-          class="flex flex-col gap-4 rounded-2xl bg-sub-alt p-4 ring-2 ring-error"
-        >
-          <p id="officialConfirmText" class="text-center text-lg text-text">
-            Ini akan MENGHAPUS semua skor latihan dan menyembunyikan
-            leaderboard. Lanjutkan?
-          </p>
-          <div class="flex gap-3">
-            <Button
-              variant="button"
-              type="button"
-              text={busy() ? "Memproses…" : "Ya, hapus & mulai"}
-              disabled={busy()}
-              class={cn(bigButtonClass, redClass, "flex-1 py-4 text-lg")}
-              onClick={() =>
-                void run(
-                  "start_official",
-                  "Skor latihan dihapus dan leaderboard disembunyikan. Tes resmi dimulai.",
-                )
-              }
-            />
-            <Button
-              variant="button"
-              type="button"
-              text="Batal"
-              disabled={busy()}
-              class="flex-1 rounded-2xl py-4 text-lg"
-              onClick={() => setConfirmOfficial(false)}
-            />
-          </div>
-        </div>
-      </Show>
-
-      <Button
-        variant="button"
-        type="button"
-        text="Umumkan hasil"
-        disabled={busy()}
-        class={cn(bigButtonClass, greenClass)}
-        onClick={() => void run("show", "Hasil diumumkan, leaderboard tampil.")}
-      />
+        </Match>
+      </Switch>
 
       <div class="flex justify-center">
         <Button
