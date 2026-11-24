@@ -18,10 +18,20 @@ function devOverride(): EventState | null {
   if (!isDevEnvironment()) return null;
   const event = new URLSearchParams(initialSearch).get("event");
   if (event === "closed") {
-    return { open: false, leaderboardHidden: false, endsAt: null };
+    return {
+      open: false,
+      leaderboardHidden: false,
+      endsAt: null,
+      officialStartedAt: null,
+    };
   }
   if (event === "hidden") {
-    return { open: true, leaderboardHidden: true, endsAt: null };
+    return {
+      open: true,
+      leaderboardHidden: true,
+      endsAt: null,
+      officialStartedAt: null,
+    };
   }
   return null;
 }

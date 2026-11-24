@@ -243,6 +243,8 @@ const settings = createRoute({
   staticData: { page: "settings" },
   component: createRouterPage(SettingsPage),
   validateSearch: SettingsSearchSchema,
+  // kiosk: settings are disabled (they could change the test or the hotkeys)
+  beforeLoad: () => redirect({ to: "/", throw: true }),
 });
 
 const login = createRoute({

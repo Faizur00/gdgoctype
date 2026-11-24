@@ -3,8 +3,9 @@
 // Solid TestPage. Remove it once no imperative code needs to know.
 import { createSignal, untrack } from "solid-js";
 
+import { hasAttemptsLeft } from "../kiosk/attempts";
 import { isSessionOpen } from "../kiosk/event-state";
-import { isGateOpen } from "../kiosk/phase";
+import { getPlayerBase, isGateOpen } from "../kiosk/phase";
 import { getRoutePage, isLeavingPage } from "../states/router";
 
 // the current mount's signal - a remount can register before the old one aborts
@@ -29,11 +30,14 @@ export function isTestPageMounted(): boolean {
  * place (eg. signing in) doesn't stop it.
  */
 export function canStartTest(): boolean {
-  // kiosk: no test before a player name is confirmed or after the session closed
+  // kiosk: no test before a player name is confirmed, after the session
+  // closed, or once the player used all attempts (last line of defence for
+  // any restart path)
   return (
     getRoutePage() === "test" &&
     !isLeavingPage() &&
     !isGateOpen() &&
-    isSessionOpen()
+    isSessionOpen() &&
+    hasAttemptsLeft(getPlayerBase())
   );
 }

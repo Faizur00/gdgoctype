@@ -10,14 +10,15 @@ const LOCKED_CONFIG: Partial<Config> = {
   numbers: false,
   funbox: [],
   ads: "off",
+  // no keyboard restart: the kiosk limits attempts per player
+  quickRestart: "off",
 };
 
 /** true if setting `key` to `value` would break the lock */
 export function violatesLockedConfig(key: string, value: unknown): boolean {
   if (!Object.hasOwn(LOCKED_CONFIG, key)) return false;
   return (
-    JSON.stringify(LOCKED_CONFIG[key as keyof Config]) !==
-    JSON.stringify(value)
+    JSON.stringify(LOCKED_CONFIG[key as keyof Config]) !== JSON.stringify(value)
   );
 }
 

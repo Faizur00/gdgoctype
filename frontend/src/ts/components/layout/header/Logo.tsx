@@ -1,10 +1,11 @@
 import { Link } from "@tanstack/solid-router";
 import { JSXElement } from "solid-js";
 
-import { getRoutePage } from "../../../states/router";
 import { isFocusMode } from "../../../states/test";
-import { restartTest } from "../../../test/test-logic";
 import { cn } from "../../../utils/cn";
+
+// kiosk: the logo only navigates home. It never restarts the test (attempt
+// limit per player: the next test only comes from the kiosk buttons)
 
 export function Logo(): JSXElement {
   return (
@@ -13,9 +14,6 @@ export function Logo(): JSXElement {
       class="group/logo -m-2 box-content flex shrink-0 flex-col gap-0.5 rounded-[0.8rem] p-2"
       aria-label="GDGoC Type Home"
       data-ui-element="logo"
-      onClick={() => {
-        if (getRoutePage() === "test") void restartTest();
-      }}
     >
       <div class="flex h-9 items-center gap-2">
         <img

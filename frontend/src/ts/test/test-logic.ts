@@ -112,6 +112,8 @@ import { WordGenError } from "../utils/word-gen-error";
 import { tryCatch } from "@monkeytype/util/trycatch";
 import * as Sentry from "../sentry";
 import { reportFinishedTest } from "../kiosk/score-flow";
+import { recordAttemptStart } from "../kiosk/attempts";
+import { getPlayerBase } from "../kiosk/phase";
 import { showLoaderBar, hideLoaderBar } from "../states/loader-bar";
 import { canQuickRestart } from "../utils/quick-restart";
 import {
@@ -163,6 +165,10 @@ let failReason = "";
 
 export function startTest(now: number): boolean {
   if (!canStartTest()) return false;
+
+  // kiosk: the attempt counts on the first key, so an abandoned, AFK or
+  // reloaded test still counts
+  recordAttemptStart(getPlayerBase());
 
   if (isAuthenticated()) {
     void AnalyticsController.log("testStarted");

@@ -42,6 +42,8 @@ export type EventState = {
   open: boolean;
   leaderboardHidden: boolean;
   endsAt: Date | null;
+  /** set by start_official; null before the official test (or no column) */
+  officialStartedAt: string | null;
 };
 
 type RequestOptions = {
@@ -281,10 +283,9 @@ export async function fetchRank(
 export async function fetchEventState(
   signal?: AbortSignal,
 ): Promise<EventState | null> {
-  const response = await request(
-    "/event_state?select=open,leaderboard_hidden,ends_at&limit=1",
-    { signal },
-  );
+  // select=*: a missing optional column (official_started_at) must not turn
+  // the whole request into a 400
+  const response = await request("/event_state?select=*&limit=1", { signal });
   if (!response.ok) throw new Error(`event_state ${response.status}`);
   const data: unknown = await response.json();
   const row: unknown = Array.isArray(data) ? data[0] : undefined;
@@ -302,6 +303,11 @@ export async function fetchEventState(
     open: record["open"],
     leaderboardHidden: record["leaderboard_hidden"],
     endsAt: endsAt !== null && !Number.isNaN(endsAt.getTime()) ? endsAt : null,
+    officialStartedAt:
+      typeof record["official_started_at"] === "string" &&
+      record["official_started_at"] !== ""
+        ? record["official_started_at"]
+        : null,
   };
 }
 

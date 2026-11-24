@@ -1,12 +1,11 @@
 import { JSXElement } from "solid-js";
 
-import { getRoutePage } from "../../../states/router";
 import { isFocusMode } from "../../../states/test";
-import { restartTest } from "../../../test/test-logic";
 import { cn } from "../../../utils/cn";
 import { Button } from "../../common/Button";
 
-// kiosk: only the keyboard test button (/leaderboard is opened by URL)
+// kiosk: only the keyboard test button (/leaderboard is opened by URL). It
+// only navigates, it never restarts the test (attempt limit per player)
 export function Nav(): JSXElement {
   const buttonClass = () =>
     cn("aspect-square", {
@@ -29,9 +28,6 @@ export function Nav(): JSXElement {
         balloon={{
           text: "Tes Mengetik",
           position: "down",
-        }}
-        onClick={() => {
-          if (getRoutePage() === "test") void restartTest();
         }}
       />
     </nav>

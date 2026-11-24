@@ -9,7 +9,6 @@ import { listenForModifierKeys } from "../../../states/modifiers";
 import { listenForMonkeyKeys } from "../../../states/monkey";
 import { isResultShown } from "../../../states/result";
 import {
-  isFocusMode,
   getLayoutfluidTimerText,
   isLayoutfluidTimerVisible,
   isResultLoading,
@@ -26,7 +25,6 @@ import * as CustomText from "../../../test/custom-text";
 import * as PaceCaret from "../../../test/pace-caret";
 import {
   leaveTestPage,
-  onRestartButtonClick,
   restartTest,
   restartIfNotStarted,
 } from "../../../test/test-logic";
@@ -35,8 +33,8 @@ import { cn } from "../../../utils/cn";
 import { ElementWithUtils } from "../../../utils/dom";
 import * as Misc from "../../../utils/misc";
 import { canQuickRestart } from "../../../utils/quick-restart";
-import { Button } from "../../common/Button";
 import { LoadingCircle } from "../../common/LoadingCircle";
+import { AttemptInfo } from "./AttemptInfo";
 import { CapsWarning } from "./CapsWarning";
 import { CompositionDisplay } from "./CompositionDisplay";
 import { FunboxTimer } from "./FunboxTimer";
@@ -49,9 +47,9 @@ import { TestModesNotice } from "./modes-notice/TestModesNotice";
 import { Monkey } from "./Monkey";
 import { OutOfFocusWarning } from "./OutOfFocusWarning";
 import { PlayerGate } from "./PlayerGate";
-import { SessionClosed } from "./SessionClosed";
 import { Premid } from "./Premid";
 import { TestResult } from "./result/TestResult";
+import { SessionClosed } from "./SessionClosed";
 import { TestInitFailed } from "./TestInitFailed";
 import { Words, wordsModeClasses } from "./Words";
 import { WordsInput } from "./WordsInput";
@@ -172,8 +170,7 @@ export function TestPage(): JSXElement {
 
   return (
     <>
-      <div class="full-width">
-      </div>
+      <div class="full-width"></div>
 
       <div
         id="typingTest"
@@ -199,6 +196,9 @@ export function TestPage(): JSXElement {
         />
         <div>
           <TestModesNotice />
+        </div>
+        <div>
+          <AttemptInfo />
         </div>
 
         <div>
@@ -248,26 +248,7 @@ export function TestPage(): JSXElement {
           <Monkey />
         </div>
 
-        <Button
-          variant="text"
-          dataset={{ "data-ui-element": "restartTestButton" }}
-          class={cn(
-            "mx-auto mt-4 w-max px-8 py-4 text-base transition-opacity",
-            "focus:opacity-100 focus:transition-none",
-            getConfig.quickRestart !== "off" && "hidden",
-            "pointer-coarse:block", //always show the button if using a pointer-coarse device
-            isFocusMode() && "opacity-0", //always hide if we are focused
-          )}
-          balloon={{
-            text: "Restart Test",
-            position: "down",
-          }}
-          fa={{
-            icon: "fa-redo-alt",
-            fixedWidth: true,
-          }}
-          onClick={onRestartButtonClick}
-        />
+        {/* kiosk: no "Restart Test" button (attempt limit per player) */}
         <div>
           <LiveStatsTextBottom />
         </div>

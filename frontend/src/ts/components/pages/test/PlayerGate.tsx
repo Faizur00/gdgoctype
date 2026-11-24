@@ -9,6 +9,7 @@ import {
   untrack,
 } from "solid-js";
 
+import { hasAttemptsLeft, MAX_ATTEMPTS } from "../../../kiosk/attempts";
 import {
   codePointLength,
   isValidName,
@@ -51,6 +52,11 @@ function GateDialog(): JSXElement {
     const name = normalizeName(value());
     if (!isValidName(name)) {
       setError(`Isi namamu dulu (1-${NAME_MAX_LENGTH} karakter).`);
+      inputRef?.focus();
+      return;
+    }
+    if (!hasAttemptsLeft(name)) {
+      setError(`Kesempatan habis (${MAX_ATTEMPTS}/${MAX_ATTEMPTS})`);
       inputRef?.focus();
       return;
     }

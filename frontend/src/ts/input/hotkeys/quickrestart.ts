@@ -1,33 +1,15 @@
 import { createRoot } from "solid-js";
-import { isAnyPopupVisible } from "../../utils/misc";
 
-import { navigate } from "../../router/navigate";
-import { restartTest } from "../../test/test-logic";
-import { getRoutePage } from "../../states/router";
 import { hotkeys, quickRestartHotkeyMap } from "../../states/hotkeys";
 import { createHotkey } from "./utils";
-import { getPhase, retrySameName } from "../../kiosk/player-state";
 import { getConfig } from "../../config/store";
 import { isLongTest, wordsHaveNewline, wordsHaveTab } from "../../states/test";
 
+// kiosk: no restart from the keyboard, neither mid test nor on the result
+// screen. The only way to the next test is the kiosk buttons (attempt limit).
+// quickRestart is also locked to "off" (no key); this is the second guard.
 function quickRestart(e: KeyboardEvent): void {
-  if (isAnyPopupVisible()) {
-    return;
-  }
-
   e.preventDefault();
-
-  // kiosk: on the result screen the next test is the same player trying again
-  if (getPhase() === "result") {
-    retrySameName();
-    return;
-  }
-
-  if (getRoutePage() === "test") {
-    void restartTest({ isQuickRestart: !e.shiftKey });
-  } else {
-    void navigate({ to: "/" });
-  }
 }
 
 // Disable restartTest when we're in long test and quick restartTest key is enter, because `shift + enter, shift +

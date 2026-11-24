@@ -1,5 +1,6 @@
 import { restartTest } from "../test/test-logic";
 import { focusWords } from "../test/test-ui";
+import { hasAttemptsLeft } from "./attempts";
 import { isValidName, normalizeName } from "./name";
 import {
   getPhase,
@@ -27,6 +28,8 @@ let confirming = false;
 export async function confirmPlayer(rawName: string): Promise<boolean> {
   const name = normalizeName(rawName);
   if (!isValidName(name)) return false;
+  // all attempts used on this device (the gate shows why)
+  if (!hasAttemptsLeft(name)) return false;
   if (confirming) return true;
 
   confirming = true;
@@ -57,8 +60,15 @@ export function changeName(): void {
   void restartTest();
 }
 
-/** Same person tries again (eg. after an invalid test): keeps the name. */
+/**
+ * Same person, next attempt: keeps the name. With no attempt left it goes to
+ * the name gate for the next player instead.
+ */
 export function retrySameName(): void {
+  if (!hasAttemptsLeft(getPlayerBase())) {
+    changeName();
+    return;
+  }
   setPhase("playing");
   void restartTest();
 }

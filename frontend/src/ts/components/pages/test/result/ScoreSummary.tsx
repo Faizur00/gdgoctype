@@ -1,7 +1,16 @@
 import { JSXElement, Show } from "solid-js";
 
+import {
+  getAttemptCount,
+  hasAttemptsLeft,
+  MAX_ATTEMPTS,
+} from "../../../../kiosk/attempts";
 import { isLeaderboardHidden } from "../../../../kiosk/event-state";
-import { changeName, retrySameName } from "../../../../kiosk/player-state";
+import {
+  changeName,
+  getPlayerBase,
+  retrySameName,
+} from "../../../../kiosk/player-state";
 import {
   getScoreView,
   type InvalidScoreView,
@@ -78,23 +87,49 @@ function ValidScore(props: { view: ValidScoreView }): JSXElement {
         {(text) => <p class="text-lg text-sub">{text()}</p>}
       </Show>
       <p class="text-sm text-sub">{statusText[props.view.status]}</p>
+      <NextButtons />
+    </div>
+  );
+}
+
+/**
+ * Kiosk: the only ways to the next test. "Percobaan n dari 3" and, while the
+ * player has attempts left, "Percobaan berikutnya (n/3)". Always "Peserta
+ * berikutnya" (back to the name gate).
+ */
+function NextButtons(): JSXElement {
+  const used = (): number => getAttemptCount(getPlayerBase());
+  const hasLeft = (): boolean => hasAttemptsLeft(getPlayerBase());
+
+  return (
+    <>
+      <p class="text-lg text-text">
+        <Show
+          when={hasLeft()}
+          fallback={`Kesempatan habis (${MAX_ATTEMPTS}/${MAX_ATTEMPTS})`}
+        >
+          Percobaan {used()} dari {MAX_ATTEMPTS}
+        </Show>
+      </p>
       <div class="mt-2 flex flex-wrap justify-center gap-3">
+        <Show when={hasLeft()}>
+          <Button
+            variant="button"
+            type="button"
+            text={`Percobaan berikutnya (${used() + 1}/${MAX_ATTEMPTS})`}
+            class="rounded-full px-8 py-3 text-lg"
+            onClick={retrySameName}
+          />
+        </Show>
         <Button
-          variant="button"
+          variant={hasLeft() ? "text" : "button"}
           type="button"
-          text="Main lagi"
-          class="rounded-full px-8 py-3 text-lg"
-          onClick={retrySameName}
-        />
-        <Button
-          variant="text"
-          type="button"
-          text="Ganti nama"
+          text="Peserta berikutnya"
           class="rounded-full px-6 py-3 text-lg"
           onClick={changeName}
         />
       </div>
-    </div>
+    </>
   );
 }
 
@@ -105,22 +140,7 @@ function InvalidScore(props: { view: InvalidScoreView }): JSXElement {
       <p class="text-2xl text-error">Tes tidak valid</p>
       <p class="text-text">{props.view.reason}</p>
       <p class="text-sm text-sub">Skor tidak dikirim.</p>
-      <div class="mt-2 flex flex-wrap justify-center gap-3">
-        <Button
-          variant="button"
-          type="button"
-          text="Coba lagi"
-          class="rounded-full px-8 py-3 text-lg"
-          onClick={retrySameName}
-        />
-        <Button
-          variant="text"
-          type="button"
-          text="Ganti nama"
-          class="rounded-full px-6 py-3 text-lg"
-          onClick={changeName}
-        />
-      </div>
+      <NextButtons />
     </div>
   );
 }
