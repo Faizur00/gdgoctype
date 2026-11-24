@@ -6,7 +6,6 @@ import { isFocusMode } from "../../../states/test";
 import { cn } from "../../../utils/cn";
 import { Button } from "../../common/Button";
 import { isLoadingShown } from "../../core/PageSwitcher";
-import { Keytips } from "./Keytips";
 import { VersionButton } from "./VersionButton";
 
 export function Footer(): JSXElement {
@@ -18,7 +17,8 @@ export function Footer(): JSXElement {
       data-focused={isFocusMode() ? "" : undefined}
       inert={isLoadingShown()}
     >
-      <Keytips />
+      {/* kiosk: key tips are never shown (no restart or command line keys),
+      whatever showKeyTips is in the stored config */}
 
       <div
         class={cn("-m-2 flex justify-between gap-8 transition-opacity", {
