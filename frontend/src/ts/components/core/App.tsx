@@ -28,13 +28,17 @@ import { Funbox } from "./Funbox";
 import { NoCssDetails } from "./NoCssDetails";
 import { Theme } from "./Theme";
 
-// kiosk: the live leaderboard (second laptop) has no header or footer. Also
-// true while the first load resolves, so they don't flash on that url.
+// kiosk: the live leaderboard (second laptop) and the organizer page have no
+// header or footer. Also true while the first load resolves, so they don't
+// flash on those urls.
 function isKioskLeaderboard(): boolean {
   const page = getRoutePage();
+  const path = window.location.pathname;
   return (
     page === "kioskLeaderboard" ||
-    (page === "loading" && window.location.pathname.startsWith("/leaderboard"))
+    page === "kioskPanitia" ||
+    (page === "loading" &&
+      (path.startsWith("/leaderboard") || path.startsWith("/panitia")))
   );
 }
 

@@ -20,6 +20,7 @@ import { AccountSettingsPage } from "../components/pages/account-settings/Accoun
 import { AccountPage } from "../components/pages/account/AccountPage";
 import { FriendsPage } from "../components/pages/connections/FriendsPage";
 import { KioskLeaderboardPage } from "../components/pages/KioskLeaderboardPage";
+import { KioskPanitiaPage } from "../components/pages/KioskPanitiaPage";
 import { LoginPage } from "../components/pages/login/LoginPage";
 import { createRouterPage } from "../components/core/Page";
 import { ProfilePage } from "../components/pages/profile/ProfilePage";
@@ -62,7 +63,8 @@ export type PageName =
   | "404"
   | "accountSettings"
   | "friends"
-  | "kioskLeaderboard";
+  | "kioskLeaderboard"
+  | "kioskPanitia";
 
 declare module "@tanstack/solid-router" {
   // oxlint-disable-next-line typescript/consistent-type-definitions -- module augmentation needs an interface
@@ -203,13 +205,22 @@ const kioskLeaderboard = createRoute({
   component: createRouterPage(KioskLeaderboardPage),
 });
 
+// kiosk: organizer controls (opened by url from a phone, no link anywhere)
+const kioskPanitia = createRoute({
+  getParentRoute: () => userDataRoute,
+  path: "/panitia",
+  staticData: { page: "kioskPanitia" },
+  component: createRouterPage(KioskPanitiaPage),
+});
+
 // kiosk: the original (backend) leaderboards are gone, send to the live one
 const leaderboards = createRoute({
   getParentRoute: () => userDataRoute,
   path: "/leaderboards",
   // kept so the old (now unreachable) leaderboard code still type checks
   validateSearch: LeaderboardSearchSchema,
-  beforeLoad: () => redirect({ to: "/leaderboard", replace: true, throw: true }),
+  beforeLoad: () =>
+    redirect({ to: "/leaderboard", replace: true, throw: true }),
 });
 
 const about = createRoute({
@@ -347,6 +358,7 @@ export const routeTree = root.addChildren([
   userDataRoute.addChildren([
     test,
     kioskLeaderboard,
+    kioskPanitia,
     leaderboards,
     about,
     settings,

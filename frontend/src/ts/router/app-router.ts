@@ -69,6 +69,8 @@ function updatePageTitle(page: PageName): void {
     updateTitle();
   } else if (page === "kioskLeaderboard") {
     updateTitle("Leaderboard | GDGoC Type");
+  } else if (page === "kioskPanitia") {
+    updateTitle("Panitia | GDGoC Type");
   } else {
     updateTitle(`${capitalizeFirstLetterOfEachWord(page)} | GDGoC Type`);
   }

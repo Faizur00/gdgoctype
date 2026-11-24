@@ -304,3 +304,30 @@ export async function fetchEventState(
     endsAt: endsAt !== null && !Number.isNaN(endsAt.getTime()) ? endsAt : null,
   };
 }
+
+export type PanitiaAction = "check" | "show" | "hide" | "start_official";
+
+/**
+ * Organizer action through the panitia_action RPC (the PIN is checked in the
+ * database, never in the frontend). Returns its text result: "ok" |
+ * "wrong_pin" | "locked" | "not_configured" | "bad_action".
+ * Throws on network errors, timeout or a bad response.
+ */
+export async function panitiaAction(
+  pin: string,
+  action: PanitiaAction,
+): Promise<string> {
+  const response = await request("/rpc/panitia_action", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ p_pin: pin, p_action: action }),
+    // start_official deletes every score: give it more time than a read
+    timeoutMs: 10_000,
+  });
+  if (!response.ok) throw new Error(`panitia_action ${response.status}`);
+  const data: unknown = await response.json();
+  if (typeof data !== "string") {
+    throw new Error("panitia_action: unexpected body");
+  }
+  return data;
+}

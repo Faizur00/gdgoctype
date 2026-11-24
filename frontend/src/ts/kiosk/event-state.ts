@@ -55,6 +55,17 @@ export function isLeaderboardHidden(): boolean {
   return getEventState()?.leaderboardHidden ?? false;
 }
 
+/** Fetches the state once now (eg. right after an organizer action). Never throws. */
+export async function refreshEventState(): Promise<void> {
+  if (devOverride() !== null) return;
+  try {
+    const state = await fetchEventState();
+    if (state !== null) setEventState(state);
+  } catch {
+    // the next poll catches up
+  }
+}
+
 /**
  * Polls the state every 5 s, one request at a time. Keeps the last state when
  * a poll fails. Returns the stop function.
