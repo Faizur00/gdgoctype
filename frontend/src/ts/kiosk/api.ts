@@ -1,7 +1,4 @@
-import {
-  SUPABASE_PUBLISHABLE_KEY,
-  SUPABASE_URL,
-} from "../constants/supabase";
+import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from "../constants/supabase";
 import { isValidName, nameKey, normalizeName } from "./name";
 
 const REST_URL = `${SUPABASE_URL}/rest/v1`;

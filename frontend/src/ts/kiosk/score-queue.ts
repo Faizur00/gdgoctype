@@ -10,6 +10,8 @@ import { getPlayerBase, getPlayerName, setPlayerName } from "./phase";
 const STORAGE_KEY = "gdgoc.scoreQueue.v1";
 const MAX_QUEUE = 200;
 const FLUSH_INTERVAL_MS = 15_000;
+// total time to resolve a name (jitter + lookup), then the score stays queued
+const RESOLVE_TIMEOUT_MS = 8_000;
 
 export type SendOutcome = "sent" | "queued" | "closed" | "rejected";
 
@@ -101,34 +103,88 @@ export function onScoreClosed(listener: (id: string) => void): () => void {
 
 const inFlight = new Map<string, Promise<SendOutcome>>();
 
+// name resolution runs one at a time on this device: a second test finished
+// while the first is still resolving/queued waits for it and reuses its name
+let nameLock: Promise<unknown> = Promise.resolve();
+
+/**
+ * Name this score is sent with, or null if it can't be resolved now (offline).
+ * The picked name is reserved on the device right away (not after the insert),
+ * so every later test of the same base reuses it.
+ */
+async function resolveName(item: QueuedScore): Promise<string | null> {
+  const run = nameLock.then(async (): Promise<string | null> => {
+    const controller = new AbortController();
+    let expired = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    // total deadline: a stalled lookup must not hold nameLock forever
+    const timeout = new Promise<null>((resolve) => {
+      timer = setTimeout(() => {
+        expired = true;
+        controller.abort();
+        resolve(null);
+      }, RESOLVE_TIMEOUT_MS);
+    });
+    try {
+      return await Promise.race([
+        pickName(item, controller.signal, () => expired),
+        timeout,
+      ]);
+    } finally {
+      clearTimeout(timer);
+    }
+  });
+  nameLock = run.catch(() => undefined);
+  return run;
+}
+
+async function pickName(
+  item: QueuedScore,
+  signal: AbortSignal,
+  isExpired: () => boolean,
+): Promise<string | null> {
+  const currentBase = getPlayerBase();
+  const sameBase = item.baseName === undefined || item.baseName === currentBase;
+  const assigned = getPlayerName();
+  if (assigned !== "" && sameBase) {
+    if (item.name !== assigned) {
+      item.name = assigned;
+      persist();
+    }
+    return assigned;
+  }
+
+  const base = item.baseName ?? item.name;
+  try {
+    // jitter BEFORE the lookup: devices that finish together read different
+    // snapshots instead of all seeing the same free slot
+    await waitRandomJitter(100, 400);
+    if (isExpired()) return null;
+    const existingKeys = await fetchMatchingNameKeys(base, signal);
+    // late result after the deadline: touch nothing (item, device, storage)
+    if (isExpired()) return null;
+    const picked = pickSmallestFreeName(base, existingKeys);
+    // never overwrite the stored name with an empty result
+    if (picked === "") return item.name !== "" ? item.name : null;
+    item.name = picked;
+    persist();
+    // the base may have changed during the awaits above (next player):
+    // re-check now, don't reuse the stale sameBase
+    if (getPlayerBase() === item.baseName) setPlayerName(picked);
+    return picked;
+  } catch {
+    return null;
+  }
+}
+
 async function send(item: QueuedScore): Promise<SendOutcome> {
   const running = inFlight.get(item.id);
   if (running !== undefined) return running;
 
   const promise = (async (): Promise<SendOutcome> => {
-    let nameToSend = item.name;
-
-    const storedAssigned = getPlayerName();
-    if (storedAssigned !== "") {
-      nameToSend = storedAssigned;
-      if (item.name !== nameToSend) {
-        item.name = nameToSend;
-        persist();
-      }
-    } else {
-      // First test for this device and base: resolve smallest free base (n)
-      const base = item.baseName ?? getPlayerBase() ?? item.name;
-      try {
-        const existingKeys = await fetchMatchingNameKeys(base);
-        nameToSend = pickSmallestFreeName(base, existingKeys);
-        await waitRandomJitter(100, 400);
-        item.name = nameToSend;
-        persist();
-      } catch {
-        // Network error during lookup: cannot resolve or send now, remain queued
-        return "queued";
-      }
-    }
+    const nameToSend = await resolveName(item);
+    // lookup failed (offline): stay queued, nothing was sent
+    if (nameToSend === null) return "queued";
 
     const result = await insertScore({
       id: item.id,
@@ -139,9 +195,6 @@ async function send(item: QueuedScore): Promise<SendOutcome> {
 
     if (result === "ok") {
       remove(item.id);
-      if (getPlayerName() === "") {
-        setPlayerName(nameToSend);
-      }
       for (const listener of resolvedListeners) listener(item.id, nameToSend);
       for (const listener of sentListeners) listener(item.id);
       return "sent";

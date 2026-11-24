@@ -48,9 +48,7 @@ function updateValid(
   patch: Partial<Omit<ValidScoreView, "kind" | "id">>,
 ): void {
   setScoreView((view) =>
-    view?.kind === "valid" && view.id === id
-      ? { ...view, ...patch }
-      : view,
+    view?.kind === "valid" && view.id === id ? { ...view, ...patch } : view,
   );
 }
 
@@ -117,7 +115,11 @@ export function reportFinishedTest(result: {
   setPhase("result");
 
   if (result.invalidReason !== null) {
-    setScoreView({ kind: "invalid", name: nameToUse, reason: result.invalidReason });
+    setScoreView({
+      kind: "invalid",
+      name: nameToUse,
+      reason: result.invalidReason,
+    });
     return;
   }
   if (nameToUse === "") {

@@ -42,7 +42,19 @@ export function ScoreSummary(): JSXElement {
 function ValidScore(props: { view: ValidScoreView }): JSXElement {
   const rankText = (): string => {
     // the organizers hide the standings near the end: don't leak the rank
-    return "Peringkat nya liat diatas aja bg";
+    if (isLeaderboardHidden()) return "Peringkat diumumkan di akhir acara";
+    const rank = props.view.rank;
+    if (rank !== null && rank !== undefined) {
+      return `Peringkat #${rank.peringkat}`;
+    }
+    // rank is only requested once the score is stored: until then it is
+    // "coming", not "failed". "unavailable" = stored but lookup failed, or
+    // the score will never be stored (closed / failed)
+    const pending =
+      props.view.rankLoading ||
+      props.view.status === "sending" ||
+      props.view.status === "queued";
+    return pending ? "Memuat peringkat…" : "Peringkat belum tersedia";
   };
 
   const bestText = (): string | undefined => {

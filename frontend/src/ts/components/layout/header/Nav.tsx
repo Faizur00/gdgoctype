@@ -6,7 +6,7 @@ import { restartTest } from "../../../test/test-logic";
 import { cn } from "../../../utils/cn";
 import { Button } from "../../common/Button";
 
-// kiosk: only essential navigation buttons (keyboard test + live leaderboard)
+// kiosk: only the keyboard test button (/leaderboard is opened by URL)
 export function Nav(): JSXElement {
   const buttonClass = () =>
     cn("aspect-square", {
@@ -32,22 +32,6 @@ export function Nav(): JSXElement {
         }}
         onClick={() => {
           if (getRoutePage() === "test") void restartTest();
-        }}
-      />
-      <Button
-        variant="text"
-        fa={{
-          icon: "fa-crown",
-          fixedWidth: true,
-        }}
-        to="/leaderboard"
-        class={buttonClass()}
-        dataset={{
-          "data-nav-item": "leaderboards",
-        }}
-        balloon={{
-          text: "Leaderboard",
-          position: "down",
         }}
       />
     </nav>
